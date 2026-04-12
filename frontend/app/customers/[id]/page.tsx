@@ -613,7 +613,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div className="space-y-3">
-              {customer.sales?.map((s) => (
+              {customer.payments?.map((s) => (
                 <div key={s.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div>
@@ -647,7 +647,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   )}
                 </div>
               ))}
-              {(!customer.sales || customer.sales.length === 0) && (
+              {(!customer.payments || customer.payments.length === 0) && (
                 <p className="text-gray-500 text-center py-8">결제 기록이 없습니다</p>
               )}
             </div>

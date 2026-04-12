@@ -71,7 +71,7 @@ export default function CustomersPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          centerId: "default-center-id",
+          centerId: centerId || "default-center-id",
           name: form.name,
           contactNumber: form.contactNumber,
           classification: form.classification,

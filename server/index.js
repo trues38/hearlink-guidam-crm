@@ -418,13 +418,20 @@ app.get('/api/customers/:id', async (req, res) => {
       consultations: { orderBy: { consultedAt: 'desc' }, take: 10 },
       audiometries: { orderBy: { createdAt: 'desc' }, include: { pureToneResults: true } },
       sales: { orderBy: { createdAt: 'desc' }, include: { tossPayments: true } },
+      schedules: { orderBy: { scheduledAt: 'asc' } },
       workLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
       documents: { orderBy: { createdAt: 'desc' }, take: 10 },
       notifications: { orderBy: { createdAt: 'desc' }, take: 10 }
     }
   });
   if (!customer) return res.status(404).json({ error: 'Customer not found' });
-  res.json(customer);
+
+  const response = {
+    ...customer,
+    payments: customer.sales
+  };
+
+  res.json(response);
 });
 
 app.post('/api/customers', async (req, res) => {
