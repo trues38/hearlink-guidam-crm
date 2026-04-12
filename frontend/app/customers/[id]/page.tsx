@@ -162,9 +162,15 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const [activeTab, setActiveTab] = useState<TabType>("info");
   const [showEditModal, setShowEditModal] = useState(false);
   const [consultationForm, setConsultationForm] = useState({ content: "", method: "CENTER_VISIT", consultedAt: "" });
+  const [editingConsultation, setEditingConsultation] = useState<Consultation | null>(null);
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [audiometryForm, setAudiometryForm] = useState({ lossType: "" });
   const [scheduleForm, setScheduleForm] = useState({ title: "", description: "", scheduledAt: "" });
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ totalAmount: "", paidAmount: "0", status: "UNPAID", memo: "" });
+  const [editingPayment, setEditingPayment] = useState<Sale | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [workLogForm, setWorkLogForm] = useState({ type: "CUSTOMER_VISIT", content: "" });
   const [editForm, setEditForm] = useState<Customer | null>(null);
   const [centerId, setCenterId] = useState<string>("");
@@ -250,6 +256,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
   const handleWorkLogSubmit = async () => {
     if (!workLogForm.content) return;
+    return;
     try {
       await fetch(`${API_BASE}/api/worklogs`, {
         method: "POST",
@@ -462,20 +469,83 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 <div key={c.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
-                        {consultationMethodLabels[c.method] || c.method}
-                      </span>
-                      <p className="mt-2 text-gray-900">{c.content}</p>
+                      <div className="flex gap-2 items-center mb-2">
+                        <span className="text-xs text-gray-500">{consultationMethodLabels[c.method] || c.method}</span>
+                        <span className="text-xs text-gray-400">{new Date(c.consultedAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm">{c.content}</p>
                     </div>
-                    <span className="text-sm text-gray-500">
-                      {new Date(c.consultedAt).toLocaleDateString("ko-KR")}
-                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setEditingConsultation(c); setConsultationForm({ content: c.content, method: c.method, consultedAt: c.consultedAt.split('T')[0] }); setShowConsultationModal(true); }}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('삭제하시겠습니까?')) return;
+                          await fetch(`${API_BASE}/api/consultations/${c.id}`, { method: 'DELETE' });
+                          fetchCustomer();
+                        }}
+                        className="text-xs text-red-600 hover:underline"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
               {(!customer.consultations || customer.consultations.length === 0) && (
                 <p className="text-gray-500 text-center py-8">상담 기록이 없습니다</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {showConsultationModal && editingConsultation && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md space-y-4">
+              <h3 className="font-medium">상담 수정</h3>
+              <textarea
+                value={consultationForm.content}
+                onChange={(e) => setConsultationForm({ ...consultationForm, content: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                rows={4}
+              />
+              <select
+                value={consultationForm.method}
+                onChange={(e) => setConsultationForm({ ...consultationForm, method: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="CENTER_VISIT">센터방문</option>
+                <option value="HOME_VISIT">재택방문</option>
+                <option value="REMOTE">원격</option>
+              </select>
+              <input
+                type="date"
+                value={consultationForm.consultedAt}
+                onChange={(e) => setConsultationForm({ ...consultationForm, consultedAt: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => { setShowConsultationModal(false); setEditingConsultation(null); }} className="px-4 py-2 text-gray-600">취소</button>
+                <button
+                  onClick={async () => {
+                    await fetch(`${API_BASE}/api/consultations/${editingConsultation.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(consultationForm),
+                    });
+                    setShowConsultationModal(false);
+                    setEditingConsultation(null);
+                    fetchCustomer();
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  저장
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -564,7 +634,74 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 일정 등록
               </button>
             </div>
-            <p className="text-gray-500 text-center py-8">일정 캘린더 뷰는 별도 페이지에서 확인하실 수 있습니다</p>
+            <div className="space-y-3">
+              {customer.schedules?.length === 0 && (
+                <p className="text-gray-500 text-center py-8">일정 기록이 없습니다</p>
+              )}
+              {customer.schedules?.map((s) => (
+                <div key={s.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex gap-2 items-center mb-1">
+                        <span className="font-medium">{s.title}</span>
+                        <span className={`px-2 py-0.5 text-xs rounded ${s.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {s.status === 'COMPLETED' ? '완료' : '예정'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500">{new Date(s.scheduledAt).toLocaleString()}</p>
+                      {s.description && <p className="text-sm text-gray-600 mt-1">{s.description}</p>}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setEditingSchedule(s); setScheduleForm({ title: s.title, description: s.description || '', scheduledAt: s.scheduledAt.slice(0, 16) }); setShowScheduleModal(true); }}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('삭제하시겠습니까?')) return;
+                          await fetch(`${API_BASE}/api/schedules/${s.id}`, { method: 'DELETE' });
+                          fetchCustomer();
+                        }}
+                        className="text-xs text-red-600 hover:underline"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showScheduleModal && editingSchedule && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md space-y-4">
+              <h3 className="font-medium">일정 수정</h3>
+              <input type="text" value={scheduleForm.title} onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              <input type="datetime-local" value={scheduleForm.scheduledAt} onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledAt: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              <input type="text" placeholder="설명" value={scheduleForm.description} onChange={(e) => setScheduleForm({ ...scheduleForm, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => { setShowScheduleModal(false); setEditingSchedule(null); }} className="px-4 py-2 text-gray-600">취소</button>
+                <button
+                  onClick={async () => {
+                    await fetch(`${API_BASE}/api/schedules/${editingSchedule.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(scheduleForm),
+                    });
+                    setShowScheduleModal(false);
+                    setEditingSchedule(null);
+                    fetchCustomer();
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  저장
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -631,6 +768,18 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                       </div>
                       {s.memo && <p className="text-sm text-gray-500 mt-1">{s.memo}</p>}
                     </div>
+                    <button
+                      onClick={() => {
+                        setEditingPayment(s);
+                        setPaymentForm({ totalAmount: String(s.totalAmount), paidAmount: String(s.paidAmount), status: s.status, memo: s.memo || '' });
+                        setShowPaymentModal(true);
+                      }}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      수정
+                    </button>
+                  </div>
+                  <div className="mt-2 flex justify-between items-start">
                     <div className="text-right text-sm">
                       <p className="text-gray-500">
                         입금: {s.paidAmount.toLocaleString()}원
@@ -650,6 +799,59 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               {(!customer.payments || customer.payments.length === 0) && (
                 <p className="text-gray-500 text-center py-8">결제 기록이 없습니다</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {showPaymentModal && editingPayment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md space-y-4">
+              <h3 className="font-medium">결제 수정</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500">총액</label>
+                  <input type="number" value={paymentForm.totalAmount} onChange={(e) => setPaymentForm({ ...paymentForm, totalAmount: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">입금액</label>
+                  <input type="number" value={paymentForm.paidAmount} onChange={(e) => setPaymentForm({ ...paymentForm, paidAmount: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">상태</label>
+                <select value={paymentForm.status} onChange={(e) => setPaymentForm({ ...paymentForm, status: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <option value="UNPAID">미결제</option>
+                  <option value="PAID">결제완료</option>
+                  <option value="REFUNDED">환불됨</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">메모</label>
+                <input type="text" value={paymentForm.memo} onChange={(e) => setPaymentForm({ ...paymentForm, memo: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => { setShowPaymentModal(false); setEditingPayment(null); }} className="px-4 py-2 text-gray-600">취소</button>
+                <button
+                  onClick={async () => {
+                    await fetch(`${API_BASE}/api/payments/${editingPayment.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        totalAmount: parseInt(paymentForm.totalAmount),
+                        paidAmount: parseInt(paymentForm.paidAmount),
+                        status: paymentForm.status,
+                        memo: paymentForm.memo,
+                      }),
+                    });
+                    setShowPaymentModal(false);
+                    setEditingPayment(null);
+                    fetchCustomer();
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  저장
+                </button>
+              </div>
             </div>
           </div>
         )}

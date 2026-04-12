@@ -415,7 +415,7 @@ app.get('/api/customers/:id', async (req, res) => {
   const customer = await prisma.customer.findUnique({
     where: { id: req.params.id },
     include: {
-      consultations: { orderBy: { consultedAt: 'desc' }, take: 10 },
+      consultations: { orderBy: { consultedAt: 'desc' } },
       audiometries: { orderBy: { createdAt: 'desc' }, include: { pureToneResults: true } },
       sales: { orderBy: { createdAt: 'desc' }, include: { tossPayments: true } },
       schedules: { orderBy: { scheduledAt: 'asc' } },
@@ -502,6 +502,25 @@ app.post('/api/consultations', async (req, res) => {
     include: { customer: true }
   });
   res.status(201).json(consultation);
+});
+
+app.put('/api/consultations/:id', async (req, res) => {
+  const { content, method, consultedAt } = req.body;
+  const consultation = await prisma.consultation.update({
+    where: { id: req.params.id },
+    data: {
+      ...(content && { content }),
+      ...(method && { method }),
+      ...(consultedAt && { consultedAt: new Date(consultedAt) }),
+    },
+    include: { customer: true },
+  });
+  res.json(consultation);
+});
+
+app.delete('/api/consultations/:id', async (req, res) => {
+  await prisma.consultation.delete({ where: { id: req.params.id } });
+  res.status(204).send();
 });
 
 // Audiometry CRUD
