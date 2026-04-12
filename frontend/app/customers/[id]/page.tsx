@@ -21,6 +21,8 @@ type Customer = {
   createdAt: string;
   consultations: Consultation[];
   audiometries: Audiometry[];
+  schedules: Schedule[];
+  payments: Sale[];
   sales: Sale[];
   workLogs: WorkLog[];
   documents: Document[];
@@ -74,6 +76,14 @@ type Sale = {
   status: string;
   createdAt: string;
   tossPayments: TossPayment[];
+};
+
+type Schedule = {
+  id: string;
+  title: string;
+  description?: string;
+  scheduledAt: string;
+  status: string;
 };
 
 type WorkLog = {
@@ -157,8 +167,11 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const [paymentForm, setPaymentForm] = useState({ totalAmount: "", paidAmount: "0", status: "UNPAID", memo: "" });
   const [workLogForm, setWorkLogForm] = useState({ type: "CUSTOMER_VISIT", content: "" });
   const [editForm, setEditForm] = useState<Customer | null>(null);
+  const [centerId, setCenterId] = useState<string>("");
 
   useEffect(() => {
+    const stored = localStorage.getItem("centerId");
+    if (stored) setCenterId(stored);
     fetchCustomer();
   }, [id]);
 
@@ -211,7 +224,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       await fetch(`${API_BASE}/api/schedules`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: id, centerId: "default-center-id", ...scheduleForm }),
+        body: JSON.stringify({ customerId: id, centerId: centerId || "default-center-id", ...scheduleForm }),
       });
       setScheduleForm({ title: "", description: "", scheduledAt: "" });
       fetchCustomer();
@@ -226,12 +239,27 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       await fetch(`${API_BASE}/api/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: id, centerId: "default-center-id", ...paymentForm }),
+        body: JSON.stringify({ customerId: id, centerId: centerId || "default-center-id", ...paymentForm }),
       });
       setPaymentForm({ totalAmount: "", paidAmount: "0", status: "UNPAID", memo: "" });
       fetchCustomer();
     } catch (err) {
       alert("결제 등록에 실패했습니다");
+    }
+  };
+
+  const handleWorkLogSubmit = async () => {
+    if (!workLogForm.content) return;
+    try {
+      await fetch(`${API_BASE}/api/worklogs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: id, centerId: centerId || "default-center-id", ...workLogForm }),
+      });
+      setWorkLogForm({ type: "CUSTOMER_VISIT", content: "" });
+      fetchCustomer();
+    } catch (err) {
+      alert("활동 등록에 실패했습니다");
     }
   };
 
@@ -273,8 +301,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     { key: "info", label: "기본정보" },
     { key: "consultations", label: "상담", count: customer.consultations?.length },
     { key: "audiometries", label: "청력검사", count: customer.audiometries?.length },
-    { key: "schedules", label: "일정", count: customer.sales?.length },
-    { key: "payments", label: "결제", count: customer.sales?.length },
+    { key: "schedules", label: "일정", count: customer.schedules?.length },
+    { key: "payments", label: "결제", count: customer.payments?.length },
     { key: "documents", label: "문서", count: customer.documents?.length },
     { key: "worklogs", label: "활동", count: customer.workLogs?.length },
     { key: "notifications", label: "알림", count: customer.notifications?.length },
