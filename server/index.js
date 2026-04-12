@@ -419,6 +419,7 @@ app.get('/api/customers/:id', async (req, res) => {
       audiometries: { orderBy: { createdAt: 'desc' }, include: { pureToneResults: true } },
       sales: { orderBy: { createdAt: 'desc' }, include: { tossPayments: true } },
       schedules: { orderBy: { scheduledAt: 'asc' } },
+      devices: true,
       workLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
       documents: { orderBy: { createdAt: 'desc' }, take: 10 },
       notifications: { orderBy: { createdAt: 'desc' }, take: 10 }
@@ -426,9 +427,13 @@ app.get('/api/customers/:id', async (req, res) => {
   });
   if (!customer) return res.status(404).json({ error: 'Customer not found' });
 
+  const { computeCustomerInsights } = require('./services/customerComputed');
+  const computed = computeCustomerInsights(customer);
+
   const response = {
     ...customer,
-    payments: customer.sales
+    payments: customer.sales,
+    computed
   };
 
   res.json(response);

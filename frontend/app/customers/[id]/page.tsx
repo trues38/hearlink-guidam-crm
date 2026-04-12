@@ -27,6 +27,13 @@ type Customer = {
   workLogs: WorkLog[];
   documents: Document[];
   notifications: Notification[];
+  computed?: {
+    ptaLevel?: string;
+    ptaDecibel?: number;
+    positionSuggestion?: string;
+    riskFlags?: string[];
+    nextActions?: string[];
+  };
 };
 
 type Consultation = {
@@ -362,9 +369,61 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               <span className="text-gray-500">수급구분</span>
               <p className="font-medium">{recipientLabels[customer.recipientType]}</p>
             </div>
-          )}
-        </div>
+)}
       </div>
+
+      {customer.computed && (customer.computed.ptaLevel || customer.computed.positionSuggestion || customer.computed.riskFlags?.length > 0 || customer.computed.nextActions?.length > 0) && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm p-4 border border-blue-100">
+          <div className="flex flex-wrap gap-4 items-start">
+            {customer.computed.ptaLevel && (
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  customer.computed.ptaLevel === 'high' ? 'bg-red-100 text-red-700' :
+                  customer.computed.ptaLevel === 'borderline' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-green-100 text-green-700'
+                }`}>
+                  PTA {customer.computed.ptaLevel === 'high' ? '고도' : customer.computed.ptaLevel === 'borderline' ? '경계' : '경미'}
+                </span>
+                {customer.computed.ptaDecibel && (
+                  <span className="text-sm text-gray-600">{customer.computed.ptaDecibel}dB</span>
+                )}
+              </div>
+            )}
+            {customer.computed.positionSuggestion && (
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                  {customer.computed.positionSuggestion}
+                </span>
+              </div>
+            )}
+            {customer.computed.riskFlags?.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {customer.computed.riskFlags.map((flag, i) => (
+                  <span key={i} className="px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700">
+                    {flag}
+                  </span>
+                ))}
+              </div>
+            )}
+            {customer.computed.nextActions?.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {customer.computed.nextActions.map((action, i) => (
+                  <span key={i} className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                    {action}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+        <div className="grid grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="text-gray-500">연락처</span>
+            <p className="font-medium">{customer.contactNumber}</p>
+          </div>
 
       <div className="border-b border-gray-200">
         <nav className="flex gap-6">
