@@ -11,10 +11,10 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  0: 'bg-slate-100 text-slate-600',
-  1: 'bg-blue-100 text-blue-700',
+  0: 'bg-slate-100 text-slate-600 dark:text-slate-400',
+  1: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400',
   2: 'bg-orange-100 text-orange-700',
-  3: 'bg-red-100 text-red-700'
+  3: 'bg-red-100 text-red-700 dark:text-red-400'
 }
 const PRIORITY_LABELS: Record<string, string> = {
   '0': '낮음', '1': '보통', '2': '높음', '3': '긴급'
@@ -57,26 +57,10 @@ export default function TasksPage() {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (filter.status) params.append('status', filter.status)
+      if (filter.priority) params.append('priority', filter.priority)
       const res = await fetch(`${API_BASE}/api/tasks?${params}`)
       const data = await res.json()
-      
-      // Fetch customer details for each task
-      const tasksWithCustomers: Task[] = []
-      for (const task of (data.items ?? [])) {
-        if (task.customerId) {
-          try {
-            const custRes = await fetch(`${API_BASE}/api/customers/${task.customerId}`)
-            const cust = await custRes.json()
-            tasksWithCustomers.push({ ...task, customer: cust })
-          } catch {
-            tasksWithCustomers.push(task)
-          }
-        } else {
-          tasksWithCustomers.push(task)
-        }
-      }
-      setTasks(tasksWithCustomers)
+      setTasks(data.items ?? [])
     } catch {
       console.error('Failed to fetch tasks')
     } finally {
@@ -153,8 +137,8 @@ export default function TasksPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">작업 관리</h1>
-          <p className="text-sm text-slate-500 mt-1">총 {filtered.length}건</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">작업 관리</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">총 {filtered.length}건</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn btn-primary shadow-lg shadow-blue-500/30">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,8 +149,8 @@ export default function TasksPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 flex gap-4 flex-wrap">
-        <select value={filter.priority} onChange={e => setFilter(f => ({ ...f, priority: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 flex gap-4 flex-wrap">
+        <select value={filter.priority} onChange={e => setFilter(f => ({ ...f, priority: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
           <option value="">전체 우선순위</option>
           <option value="0">낮음</option>
           <option value="1">보통</option>
@@ -177,31 +161,31 @@ export default function TasksPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">불러오는 중...</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">불러오는 중...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">등록된 작업이 없습니다.</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">등록된 작업이 없습니다.</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">고객</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">유형</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">우선순위</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">기한</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">메모</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">상태</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">관리</th>
+              <tr className="bg-slate-50 border-b border-slate-200 dark:border-slate-700">
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">고객</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">유형</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">우선순위</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">기한</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">메모</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">상태</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map(task => {
                 const dueDateStatus = getDueDateStatus(task.dueAt)
                 return (
-                  <tr key={task.id} className="hover:bg-slate-50">
+                  <tr key={task.id} className="hover:bg-slate-50 dark:hover:bg-slate-900">
                     <td className="px-6 py-4">
                       {task.customer ? (
-                        <Link href={`/customers/${task.customerId}`} className="font-medium text-slate-800 hover:text-blue-600">
+                        <Link href={`/customers/${task.customerId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400">
                           {task.customer.name}
                         </Link>
                       ) : (
@@ -209,7 +193,7 @@ export default function TasksPage() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400">
                         {TYPE_LABELS[task.type] || task.type}
                       </span>
                     </td>
@@ -220,7 +204,7 @@ export default function TasksPage() {
                     </td>
                     <td className="px-6 py-4">
                       {task.dueAt ? (
-                        <span className={`text-sm ${dueDateStatus === 'overdue' ? 'text-red-600 font-medium' : dueDateStatus === 'today' ? 'text-amber-600 font-medium' : 'text-slate-600'}`}>
+                        <span className={`text-sm ${dueDateStatus === 'overdue' ? 'text-red-600 font-medium' : dueDateStatus === 'today' ? 'text-amber-600 font-medium' : 'text-slate-600 dark:text-slate-400'}`}>
                           {new Date(task.dueAt).toLocaleDateString('ko-KR')}
                           {dueDateStatus === 'overdue' && ' (지연)'}
                           {dueDateStatus === 'today' && ' (오늘)'}
@@ -229,17 +213,17 @@ export default function TasksPage() {
                         <span className="text-slate-400 text-sm">미설정</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">{task.memo || '-'}</td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm max-w-xs truncate">{task.memo || '-'}</td>
                     <td className="px-6 py-4">
                       {task.arrivedAt ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">완료</span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400">완료</span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">대기</span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:text-slate-400">대기</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       {!task.arrivedAt && (
-                        <button onClick={() => handleComplete(task.id)} className="text-sm text-green-600 hover:underline">완료처리</button>
+                        <button onClick={() => handleComplete(task.id)} className="text-sm text-green-600 dark:text-emerald-400 hover:underline">완료처리</button>
                       )}
                     </td>
                   </tr>
@@ -253,12 +237,12 @@ export default function TasksPage() {
       {/* Add Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">새 작업 등록</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">새 작업 등록</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">고객</label>
-                <select value={form.customerId} onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">고객</label>
+                <select value={form.customerId} onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                   <option value="">고객 선택 (선택사항)</option>
                   {customers.map(c => (
                     <option key={c.id} value={c.id}>{c.name} - {c.contactNumber}</option>
@@ -267,16 +251,16 @@ export default function TasksPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">유형</label>
-                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">유형</label>
+                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     {TASK_TYPES.map(t => (
                       <option key={t} value={t}>{TYPE_LABELS[t]}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">우선순위</label>
-                  <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: parseInt(e.target.value) }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">우선순위</label>
+                  <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: parseInt(e.target.value) }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     <option value={0}>낮음</option>
                     <option value={1}>보통</option>
                     <option value={2}>높음</option>
@@ -285,12 +269,12 @@ export default function TasksPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">기한</label>
-                <input type="date" value={form.dueAt} onChange={e => setForm(f => ({ ...f, dueAt: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">기한</label>
+                <input type="date" value={form.dueAt} onChange={e => setForm(f => ({ ...f, dueAt: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">메모</label>
-                <textarea value={form.memo} onChange={e => setForm(f => ({ ...f, memo: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" rows={3} placeholder="작업 메모..." />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">메모</label>
+                <textarea value={form.memo} onChange={e => setForm(f => ({ ...f, memo: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" rows={3} placeholder="작업 메모..." />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">취소</button>

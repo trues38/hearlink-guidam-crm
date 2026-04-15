@@ -220,8 +220,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     } catch { alert("삭제에 실패했습니다"); }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="text-gray-500">로딩 중...</div></div>;
-  if (error || !customer) return <div className="space-y-4"><button onClick={() => router.push("/customers")} className="text-blue-600 hover:underline">← 목록으로</button><div className="text-red-500">{error || "고객을 찾을 수 없습니다"}</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="text-gray-500 dark:text-slate-400">로딩 중...</div></div>;
+  if (error || !customer) return <div className="space-y-4"><button onClick={() => router.push("/customers")} className="text-blue-600 dark:text-blue-400 hover:underline">← 목록으로</button><div className="text-red-500">{error || "고객을 찾을 수 없습니다"}</div></div>;
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
     { key: "info", label: "기본정보" },
@@ -236,8 +236,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   ];
 
   const classificationColors: Record<string, string> = {
-    SELF: "bg-blue-100 text-blue-700",
-    OTHER: "bg-green-100 text-green-700",
+    SELF: "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400",
+    OTHER: "bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400",
     HEARDOTCOM: "bg-purple-100 text-purple-700"
   };
 
@@ -251,10 +251,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between bg-white rounded-xl shadow-sm p-4">
+      <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/customers")} className="text-gray-500 hover:text-gray-700 text-2xl">←</button>
-          <h1 className="text-2xl font-bold text-gray-900">{customer.name}</h1>
+          <button onClick={() => router.push("/customers")} className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 dark:text-slate-300 text-2xl">←</button>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{customer.name}</h1>
           <span className={`px-3 py-1 text-sm font-medium rounded-full ${classificationColors[(customer.classification || "SELF") as keyof typeof classificationColors]}`}>
             {labels.classification[(customer.classification || "") as keyof typeof labels.classification] || customer.classification}
           </span>
@@ -266,25 +266,25 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
       {/* Quick Info Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <p className="text-sm text-gray-500">연락처</p>
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4">
+          <p className="text-sm text-gray-500 dark:text-slate-400">연락처</p>
           <p className="font-semibold text-lg">{customer.contactNumber}</p>
         </div>
         {customer.birthDate && (
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-500">생년월일</p>
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4">
+            <p className="text-sm text-gray-500 dark:text-slate-400">생년월일</p>
             <p className="font-semibold text-lg">{new Date(customer.birthDate).toLocaleDateString("ko-KR")}</p>
           </div>
         )}
         {customer.governmentSupportType && (
-  <div className="bg-white rounded-xl shadow-sm p-4">
-    <p className="text-sm text-gray-500">정부지원</p>
+  <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4">
+    <p className="text-sm text-gray-500 dark:text-slate-400">정부지원</p>
     <p className="font-semibold text-lg">{labels.governmentSupport[customer.governmentSupportType as keyof typeof labels.governmentSupport] || "-"}</p>
   </div>
         )}
   {customer.recipientType && (
-    <div className="bg-white rounded-xl shadow-sm p-4">
-      <p className="text-sm text-gray-500">수급구분</p>
+    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4">
+      <p className="text-sm text-gray-500 dark:text-slate-400">수급구분</p>
       <p className="font-semibold text-lg">{labels.recipient[customer.recipientType as keyof typeof labels.recipient]}</p>
     </div>
   )}
@@ -292,20 +292,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
       {/* Computed Insights */}
       {customer.computed && (customer.computed.ptaLevel || customer.computed.positionSuggestion) && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm p-4 border border-blue-100">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm p-4 border border-blue-100 dark:border-blue-900/50">
           <div className="flex flex-wrap gap-3 items-center">
             {customer.computed.ptaLevel && (
               <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                customer.computed.ptaLevel === 'high' ? 'bg-red-100 text-red-700' : 
+                customer.computed.ptaLevel === 'high' ? 'bg-red-100 text-red-700 dark:text-red-400' : 
                 customer.computed.ptaLevel === 'borderline' ? 'bg-yellow-100 text-yellow-700' : 
-                'bg-green-100 text-green-700'
+                'bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400'
               }`}>
                 PTA {customer.computed.ptaLevel === 'high' ? '고도' : customer.computed.ptaLevel === 'borderline' ? '경계' : '경미'}
                 {customer.computed.ptaDecibel && ` (${customer.computed.ptaDecibel}dB)`}
               </span>
             )}
             {customer.computed.positionSuggestion && (
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-700">
+              <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400">
                 {customer.computed.positionSuggestion}
               </span>
             )}
@@ -317,20 +317,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-sm">
-        <div className="border-b border-gray-200 px-4">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm">
+        <div className="border-b border-gray-200 dark:border-slate-700 px-4">
           <nav className="flex gap-6 overflow-x-auto">
             {tabs.map((tab) => (
               <button 
                 key={tab.key} 
                 onClick={() => setActiveTab(tab.key)} 
                 className={`py-4 px-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === tab.key ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                  activeTab === tab.key ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 dark:text-slate-300"
                 }`}
               >
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className="ml-2 bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full text-xs">{tab.count}</span>
+                  <span className="ml-2 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-xs">{tab.count}</span>
                 )}
               </button>
             ))}
@@ -342,23 +342,23 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {activeTab === "info" && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
-                <div><label className="text-sm text-gray-500">이메일</label><p className="font-medium">{customer.email || "-"}</p></div>
-          <div><label className="text-sm text-gray-500">성별</label><p className="font-medium">{labels.gender[customer.gender as keyof typeof labels.gender] || "-"}</p></div>
-          <div><label className="text-sm text-gray-500">청력장애 유형</label><p className="font-medium">{labels.lossType[customer.lossType as keyof typeof labels.lossType] || "-"}</p></div>
-          <div><label className="text-sm text-gray-500">인증 유형</label><p className="font-medium">{labels.processType[customer.processType as keyof typeof labels.processType] || "-"}</p></div>
-                <div><label className="text-sm text-gray-500">유입경로</label><p className="font-medium">{customer.referralSource || "-"}</p></div>
-                <div><label className="text-sm text-gray-500">병원</label><p className="font-medium">{customer.hospitalName || "-"}</p></div>
-                <div><label className="text-sm text-gray-500">주소</label><p className="font-medium">{[customer.addressLine1, customer.addressLine2].filter(Boolean).join(" ") || "-"}</p></div>
-                <div><label className="text-sm text-gray-500">우편번호</label><p className="font-medium">{customer.postalCode || "-"}</p></div>
-                <div><label className="text-sm text-gray-500">등록일</label><p className="font-medium">{new Date(customer.createdAt).toLocaleDateString("ko-KR")}</p></div>
+                <div><label className="text-sm text-gray-500 dark:text-slate-400">이메일</label><p className="font-medium">{customer.email || "-"}</p></div>
+          <div><label className="text-sm text-gray-500 dark:text-slate-400">성별</label><p className="font-medium">{labels.gender[customer.gender as keyof typeof labels.gender] || "-"}</p></div>
+          <div><label className="text-sm text-gray-500 dark:text-slate-400">청력장애 유형</label><p className="font-medium">{labels.lossType[customer.lossType as keyof typeof labels.lossType] || "-"}</p></div>
+          <div><label className="text-sm text-gray-500 dark:text-slate-400">인증 유형</label><p className="font-medium">{labels.processType[customer.processType as keyof typeof labels.processType] || "-"}</p></div>
+                <div><label className="text-sm text-gray-500 dark:text-slate-400">유입경로</label><p className="font-medium">{customer.referralSource || "-"}</p></div>
+                <div><label className="text-sm text-gray-500 dark:text-slate-400">병원</label><p className="font-medium">{customer.hospitalName || "-"}</p></div>
+                <div><label className="text-sm text-gray-500 dark:text-slate-400">주소</label><p className="font-medium">{[customer.addressLine1, customer.addressLine2].filter(Boolean).join(" ") || "-"}</p></div>
+                <div><label className="text-sm text-gray-500 dark:text-slate-400">우편번호</label><p className="font-medium">{customer.postalCode || "-"}</p></div>
+                <div><label className="text-sm text-gray-500 dark:text-slate-400">등록일</label><p className="font-medium">{new Date(customer.createdAt).toLocaleDateString("ko-KR")}</p></div>
                 {customer.score !== null && customer.score !== undefined && (
-                  <div><label className="text-sm text-gray-500">점수</label><p className="font-medium">{customer.score}</p></div>
+                  <div><label className="text-sm text-gray-500 dark:text-slate-400">점수</label><p className="font-medium">{customer.score}</p></div>
                 )}
               </div>
               {customer.memo && (
                 <div className="mt-4">
-                  <label className="text-sm text-gray-500">메모</label>
-                  <p className="font-medium mt-1 p-4 bg-gray-50 rounded-lg">{customer.memo}</p>
+                  <label className="text-sm text-gray-500 dark:text-slate-400">메모</label>
+                  <p className="font-medium mt-1 p-4 bg-gray-50 dark:bg-slate-900 rounded-lg">{customer.memo}</p>
                 </div>
               )}
             </div>
@@ -367,7 +367,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* CONSULTATIONS TAB */}
           {activeTab === "consultations" && (
             <div className="space-y-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
                 <h3 className="font-semibold mb-3">새 상담 등록</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <textarea 
@@ -403,14 +403,14 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               </div>
               <div className="space-y-3">
                 {customer.consultations?.map((c) => (
-                  <div key={c.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div key={c.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex gap-2 items-center mb-2">
-                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">{labels.consultationMethod[c.method as keyof typeof labels.consultationMethod] || c.method}</span>
+                          <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded">{labels.consultationMethod[c.method as keyof typeof labels.consultationMethod] || c.method}</span>
                           <span className="text-xs text-gray-400">{new Date(c.consultedAt).toLocaleString("ko-KR")}</span>
                         </div>
-                        <p className="text-gray-800 whitespace-pre-wrap">{c.content}</p>
+                        <p className="text-gray-800 dark:text-slate-200 whitespace-pre-wrap">{c.content}</p>
                       </div>
                       <div className="flex gap-2 ml-4">
                         <button onClick={() => handleDelete("consultations", c.id)} className="text-xs text-red-600 hover:underline">삭제</button>
@@ -428,7 +428,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* AUDIOMETRIES TAB */}
           {activeTab === "audiometries" && (
             <div className="space-y-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
                 <h3 className="font-semibold mb-3">새 청력검사 등록</h3>
                 <div className="flex gap-4 items-center">
                   <select 
@@ -449,7 +449,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               </div>
               <div className="space-y-3">
                 {customer.audiometries?.map((a) => (
-                  <div key={a.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div key={a.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
                     <div className="flex justify-between items-start">
                       <div>
                         <span className="text-xs text-gray-400">{new Date(a.createdAt).toLocaleDateString("ko-KR")}</span>
@@ -457,7 +457,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                           {labels.lossType[a.lossType as keyof typeof labels.lossType] || "유형 미선택"}
                         </p>
                         {a.pureToneResults?.length > 0 && (
-                          <p className="text-sm text-gray-500 mt-1">순음역치 결과 {a.pureToneResults.length}건</p>
+                          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">순음역치 결과 {a.pureToneResults.length}건</p>
                         )}
                       </div>
                       <button onClick={() => handleDelete("audiometries", a.id)} className="text-xs text-red-600 hover:underline">삭제</button>
@@ -474,7 +474,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* SCHEDULES TAB */}
           {activeTab === "schedules" && (
             <div className="space-y-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
                 <h3 className="font-semibold mb-3">새 일정 등록</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <input 
@@ -508,17 +508,17 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               </div>
               <div className="space-y-3">
                 {customer.schedules?.map((s) => (
-                  <div key={s.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div key={s.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex gap-2 items-center mb-1">
                           <span className="font-semibold">{s.title}</span>
-                          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{
+                          <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded">{
                             s.status === 'COMPLETED' ? '완료' : '예정'
                           }</span>
                         </div>
-                        <p className="text-sm text-gray-500">{new Date(s.scheduledAt).toLocaleString("ko-KR")}</p>
-                        {s.description && <p className="text-sm text-gray-600 mt-1">{s.description}</p>}
+                        <p className="text-sm text-gray-500 dark:text-slate-400">{new Date(s.scheduledAt).toLocaleString("ko-KR")}</p>
+                        {s.description && <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">{s.description}</p>}
                       </div>
                       <button onClick={() => handleDelete("schedules", s.id)} className="text-xs text-red-600 hover:underline ml-4">삭제</button>
                     </div>
@@ -534,7 +534,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* PAYMENTS TAB */}
           {activeTab === "payments" && (
             <div className="space-y-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
                 <h3 className="font-semibold mb-3">새 결제 등록</h3>
                 <div className="grid grid-cols-4 gap-4">
                   <input 
@@ -578,21 +578,21 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               </div>
               <div className="space-y-3">
                 {customer.sales?.map((p) => (
-                  <div key={p.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div key={p.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex gap-2 items-center mb-1">
                           <span className="font-semibold text-lg">{Number(p.totalAmount).toLocaleString()}원</span>
                           <span className={`text-xs px-2 py-0.5 rounded ${
-                            p.status === 'PAID' ? 'bg-green-100 text-green-700' : 
-                            p.status === 'REFUNDED' ? 'bg-red-100 text-red-700' : 
+                            p.status === 'PAID' ? 'bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400' : 
+                            p.status === 'REFUNDED' ? 'bg-red-100 text-red-700 dark:text-red-400' : 
                             'bg-yellow-100 text-yellow-700'
                           }`}>
                             {labels.saleStatus[p.status as keyof typeof labels.saleStatus]}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500">입금: {Number(p.paidAmount).toLocaleString()}원</p>
-                        {p.memo && <p className="text-sm text-gray-600 mt-1">{p.memo}</p>}
+                        <p className="text-sm text-gray-500 dark:text-slate-400">입금: {Number(p.paidAmount).toLocaleString()}원</p>
+                        {p.memo && <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">{p.memo}</p>}
                         <p className="text-xs text-gray-400 mt-1">{new Date(p.createdAt).toLocaleDateString("ko-KR")}</p>
                       </div>
                     </div>
@@ -609,12 +609,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {activeTab === "documents" && (
             <div className="space-y-3">
               {customer.documents?.map((d) => (
-                <div key={d.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div key={d.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">{d.type}</span>
                       <p className="font-medium mt-2">{d.purpose} - {d.insuranceType}</p>
-                      <p className="text-sm text-gray-500 mt-1">키: {d.key}</p>
+                      <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">키: {d.key}</p>
                       <p className="text-xs text-gray-400 mt-1">{new Date(d.createdAt).toLocaleDateString("ko-KR")}</p>
                     </div>
                   </div>
@@ -629,7 +629,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {/* WORKLOGS TAB */}
           {activeTab === "worklogs" && (
             <div className="space-y-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
                 <h3 className="font-semibold mb-3">새 활동 등록</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <select 
@@ -664,10 +664,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               </div>
               <div className="space-y-3">
                 {customer.workLogs?.map((w) => (
-                  <div key={w.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div key={w.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">{labels.workLogType[w.type as keyof typeof labels.workLogType] || w.type}</span>
+                        <span className="text-xs px-2 py-1 bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400 rounded">{labels.workLogType[w.type as keyof typeof labels.workLogType] || w.type}</span>
                         <p className="font-medium mt-2">{w.content}</p>
                         <p className="text-xs text-gray-400 mt-1">{new Date(w.createdAt).toLocaleDateString("ko-KR")}</p>
                       </div>
@@ -685,12 +685,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {activeTab === "notifications" && (
             <div className="space-y-3">
               {customer.notifications?.map((n) => (
-                <div key={n.id} className={`border rounded-lg p-4 ${n.isRead ? "border-gray-200" : "border-l-4 border-l-blue-500 bg-blue-50"}`}>
+                <div key={n.id} className={`border rounded-lg p-4 ${n.isRead ? "border-gray-200" : "border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-900/30"}`}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className={`text-xs px-2 py-1 rounded ${n.isRead ? "bg-gray-100 text-gray-600" : "bg-blue-100 text-blue-700"}`}>{n.type}</span>
+                      <span className={`text-xs px-2 py-1 rounded ${n.isRead ? "bg-gray-100 text-gray-600 dark:text-slate-400" : "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400"}`}>{n.type}</span>
                       <p className="font-medium mt-2">{n.title}</p>
-                      <p className="text-sm text-gray-600 mt-1">{n.content}</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">{n.content}</p>
                       <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString("ko-KR")}</p>
                     </div>
                   </div>
@@ -706,8 +706,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           {activeTab === "fitting" && (
             <div className="space-y-4">
               {/* Add Fitting Form */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h3 className="font-medium text-gray-800 mb-3">새 피팅 등록</h3>
+              <div className="bg-gray-50 dark:bg-slate-900 rounded-lg p-4 border border-gray-200 dark:border-slate-700">
+                <h3 className="font-medium text-gray-800 dark:text-slate-200 mb-3">새 피팅 등록</h3>
                 <div className="grid grid-cols-4 gap-3">
                   <select value={fittingForm.brand} onChange={(e) => setFittingForm({ ...fittingForm, brand: e.target.value })} className="px-3 py-2 border border-gray-300 rounded-lg">
                     <option value="OTICON">오티콘</option>
@@ -715,7 +715,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     <option value="BELTON">벨톤</option>
                     <option value="STARKEY">스타키</option>
                     <option value="PHONAK">포낙</option>
-                    <option value="WIDEX">와이드кс</option>
+                    <option value="WIDEX">와이드</option>
                   </select>
                   <input type="text" value={fittingForm.model} onChange={(e) => setFittingForm({ ...fittingForm, model: e.target.value })} placeholder="모델명" className="px-3 py-2 border border-gray-300 rounded-lg" />
                   <select value={fittingForm.ear} onChange={(e) => setFittingForm({ ...fittingForm, ear: e.target.value })} className="px-3 py-2 border border-gray-300 rounded-lg">
@@ -733,25 +733,25 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   <div className="text-center py-12 text-gray-400">피팅 기록이 없습니다</div>
                 ) : (
                   [...customer.fittingLogs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((f) => (
-                    <div key={f.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                    <div key={f.id} className="border border-gray-200 rounded-lg p-4 bg-white dark:bg-slate-900">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-blue-600 text-lg">🎧</span>
+                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                            <span className="text-blue-600 dark:text-blue-400 text-lg">🎧</span>
                           </div>
                           <div>
-                            <p className="font-medium text-gray-800">
-                              {f.brand === "OTICON" ? "오티콘" : f.brand === "SIGNIA" ? "시그니아" : f.brand === "BELTON" ? "벨톤" : f.brand === "STARKEY" ? "스타키" : f.brand === "PHONAK" ? "포낙" : f.brand === "WIDEX" ? "와이드кс" : f.brand}
+                            <p className="font-medium text-gray-800 dark:text-slate-200">
+                              {f.brand === "OTICON" ? "오티콘" : f.brand === "SIGNIA" ? "시그니아" : f.brand === "BELTON" ? "벨톤" : f.brand === "STARKEY" ? "스타키" : f.brand === "PHONAK" ? "포낙" : f.brand === "WIDEX" ? "와이드" : f.brand}
                               {' '}{f.model}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-slate-400">
                               {f.ear === "LEFT" ? "왼쪽" : "오른쪽"} 귀
                             </p>
                           </div>
                         </div>
                         <span className="text-xs text-gray-400">{new Date(f.createdAt).toLocaleString("ko-KR")}</span>
                       </div>
-                      <p className="mt-3 text-gray-600 whitespace-pre-wrap">{f.content}</p>
+                      <p className="mt-3 text-gray-600 dark:text-slate-400 whitespace-pre-wrap">{f.content}</p>
                     </div>
                   ))
                 )}
@@ -764,30 +764,30 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">고객 정보 수정</h2>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 dark:text-slate-300 text-2xl">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-sm text-gray-500">이름</label><input type="text" value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500">연락처</label><input type="text" value={editForm.contactNumber || ""} onChange={(e) => setEditForm({ ...editForm, contactNumber: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500">이메일</label><input type="email" value={editForm.email || ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500">생년월일</label><input type="date" value={editForm.birthDate ? String(editForm.birthDate).split("T")[0] : ""} onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500">성별</label><select value={editForm.gender || ""} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="MALE">남성</option><option value="FEMALE">여성</option></select></div>
-              <div><label className="text-sm text-gray-500">분류</label><select value={editForm.classification || ""} onChange={(e) => setEditForm({ ...editForm, classification: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="SELF">자가</option><option value="OTHER">타기관</option><option value="HEARDOTCOM">히어닷컴</option></select></div>
-              <div><label className="text-sm text-gray-500">정부지원</label><select value={editForm.governmentSupportType || ""} onChange={(e) => setEditForm({ ...editForm, governmentSupportType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="DISABILITY_GRADE_HOLDER">장애등급소지자</option><option value="POTENTIAL_DISABILITY">장애가망</option><option value="INDUSTRIAL_ACCIDENT">산업재해</option><option value="GENERAL">일반</option></select></div>
-              <div><label className="text-sm text-gray-500">수급구분</label><select value={editForm.recipientType || ""} onChange={(e) => setEditForm({ ...editForm, recipientType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="RECIPIENT">수급자</option><option value="NEAR_POVERTY">차상위</option><option value="GENERAL">일반</option></select></div>
-              <div><label className="text-sm text-gray-500">인증유형</label><select value={editForm.processType || ""} onChange={(e) => setEditForm({ ...editForm, processType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="PRE_CERTIFICATION">사전인증</option><option value="POST_CERTIFICATION">사후인증</option></select></div>
-              <div><label className="text-sm text-gray-500">청력장애유형</label><select value={editForm.lossType || ""} onChange={(e) => setEditForm({ ...editForm, lossType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="CONDUCTIVE">전음성</option><option value="SENSORINEURAL">감각신경성</option><option value="SUDDEN">돌발성</option><option value="NOISE_INDUCED">소음성</option></select></div>
-              <div><label className="text-sm text-gray-500">유입경로</label><input type="text" value={editForm.referralSource || ""} onChange={(e) => setEditForm({ ...editForm, referralSource: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500">병원</label><input type="text" value={editForm.hospitalName || ""} onChange={(e) => setEditForm({ ...editForm, hospitalName: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div className="col-span-2"><label className="text-sm text-gray-500">주소</label><input type="text" value={editForm.addressLine1 || ""} onChange={(e) => setEditForm({ ...editForm, addressLine1: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="주소"/></div>
-              <div><label className="text-sm text-gray-500">우편번호</label><input type="text" value={editForm.postalCode || ""} onChange={(e) => setEditForm({ ...editForm, postalCode: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div className="col-span-2"><label className="text-sm text-gray-500">메모</label><textarea value={editForm.memo || ""} onChange={(e) => setEditForm({ ...editForm, memo: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows={3} /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">이름</label><input type="text" value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">연락처</label><input type="text" value={editForm.contactNumber || ""} onChange={(e) => setEditForm({ ...editForm, contactNumber: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">이메일</label><input type="email" value={editForm.email || ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">생년월일</label><input type="date" value={editForm.birthDate ? String(editForm.birthDate).split("T")[0] : ""} onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">성별</label><select value={editForm.gender || ""} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="MALE">남성</option><option value="FEMALE">여성</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">분류</label><select value={editForm.classification || ""} onChange={(e) => setEditForm({ ...editForm, classification: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="SELF">자가</option><option value="OTHER">타기관</option><option value="HEARDOTCOM">히어닷컴</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">정부지원</label><select value={editForm.governmentSupportType || ""} onChange={(e) => setEditForm({ ...editForm, governmentSupportType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="DISABILITY_GRADE_HOLDER">장애등급소지자</option><option value="POTENTIAL_DISABILITY">장애가망</option><option value="INDUSTRIAL_ACCIDENT">산업재해</option><option value="GENERAL">일반</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">수급구분</label><select value={editForm.recipientType || ""} onChange={(e) => setEditForm({ ...editForm, recipientType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="RECIPIENT">수급자</option><option value="NEAR_POVERTY">차상위</option><option value="GENERAL">일반</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">인증유형</label><select value={editForm.processType || ""} onChange={(e) => setEditForm({ ...editForm, processType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="PRE_CERTIFICATION">사전인증</option><option value="POST_CERTIFICATION">사후인증</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">청력장애유형</label><select value={editForm.lossType || ""} onChange={(e) => setEditForm({ ...editForm, lossType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="CONDUCTIVE">전음성</option><option value="SENSORINEURAL">감각신경성</option><option value="SUDDEN">돌발성</option><option value="NOISE_INDUCED">소음성</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">유입경로</label><input type="text" value={editForm.referralSource || ""} onChange={(e) => setEditForm({ ...editForm, referralSource: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">병원</label><input type="text" value={editForm.hospitalName || ""} onChange={(e) => setEditForm({ ...editForm, hospitalName: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+              <div className="col-span-2"><label className="text-sm text-gray-500 dark:text-slate-400">주소</label><input type="text" value={editForm.addressLine1 || ""} onChange={(e) => setEditForm({ ...editForm, addressLine1: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="주소"/></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">우편번호</label><input type="text" value={editForm.postalCode || ""} onChange={(e) => setEditForm({ ...editForm, postalCode: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+              <div className="col-span-2"><label className="text-sm text-gray-500 dark:text-slate-400">메모</label><textarea value={editForm.memo || ""} onChange={(e) => setEditForm({ ...editForm, memo: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows={3} /></div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">취소</button>
+              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">취소</button>
               <button onClick={handleCustomerUpdate} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">저장</button>
             </div>
           </div>

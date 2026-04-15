@@ -15,10 +15,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
-  IN_REVIEW: 'bg-blue-100 text-blue-700',
+  IN_REVIEW: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400',
   NEEDS_SUPPLEMENT: 'bg-orange-100 text-orange-700',
-  APPROVED: 'bg-green-100 text-green-700',
-  REJECTED: 'bg-red-100 text-red-700'
+  APPROVED: 'bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400',
+  REJECTED: 'bg-red-100 text-red-700 dark:text-red-400'
 }
 
 const SUPPORT_LABELS: Record<string, string> = {
@@ -62,26 +62,13 @@ export default function ConformityPage() {
   const fetchRecords = async () => {
     setLoading(true)
     try {
-      // Get all customers first
-      const customersRes = await fetch(`${API_BASE}/api/customers?limit=1000`)
-      const customersData = await customersRes.json()
-      const customers = customersData.items ?? []
-
-      // Get conformity records for each customer
-      const allRecords: ConformityRecord[] = []
-      for (const customer of customers) {
-        try {
-          const res = await fetch(`${API_BASE}/api/conformity/${customer.id}`)
-          const data = await res.json()
-          if (data.items && data.items.length > 0) {
-            allRecords.push(...data.items.map((r: ConformityRecord) => ({ ...r, customer })))
-          }
-        } catch {}
-      }
-
-      // Sort by createdAt desc
-      allRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      setRecords(allRecords)
+      const centerId = localStorage.getItem('centerId') || 'default-center-id'
+      const params = new URLSearchParams({ centerId })
+      if (statusFilter) params.append('status', statusFilter)
+      
+      const res = await fetch(`${API_BASE}/api/conformity?${params}`)
+      const data = await res.json()
+      setRecords(data.items ?? [])
     } catch {
       console.error('Failed to fetch conformity records')
     } finally {
@@ -128,60 +115,60 @@ export default function ConformityPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">적합성 심사</h1>
-          <p className="text-sm text-slate-500 mt-1">총 {filtered.length}건</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">적합성 심사</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">총 {filtered.length}건</p>
         </div>
       </div>
 
       {/* Status Filter */}
-      <div className="bg-white rounded-xl shadow-sm p-4 flex gap-2 flex-wrap">
-        <button onClick={() => setStatusFilter('')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${!statusFilter ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>전체</button>
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 flex gap-2 flex-wrap">
+        <button onClick={() => setStatusFilter('')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${!statusFilter ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>전체</button>
         {Object.entries(STATUS_LABELS).map(([status, label]) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === status ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label}</button>
+          <button key={status} onClick={() => setStatusFilter(status)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === status ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>{label}</button>
         ))}
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">불러오는 중...</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">불러오는 중...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">심사 기록이 없습니다.</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">심사 기록이 없습니다.</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">고객</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">회차</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">지원유형</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">수급구분</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">상태</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">검토자</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">검토일</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">관리</th>
+              <tr className="bg-slate-50 border-b border-slate-200 dark:border-slate-700">
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">고객</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">회차</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">지원유형</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">수급구분</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">상태</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">검토자</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">검토일</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map(record => (
-                <tr key={record.id} className="hover:bg-slate-50">
+                <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-900">
                   <td className="px-6 py-4">
-                    <Link href={`/customers/${record.customerId}`} className="font-medium text-slate-800 hover:text-blue-600">
+                    <Link href={`/customers/${record.customerId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400">
                       {record.customer?.name || '알 수 없음'}
                     </Link>
                     <p className="text-xs text-slate-400">{record.customer?.contactNumber}</p>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">#{record.round}차</td>
-                  <td className="px-6 py-4 text-slate-600">{record.supportType ? SUPPORT_LABELS[record.supportType] || record.supportType : '-'}</td>
-                  <td className="px-6 py-4 text-slate-600">{record.recipientType ? RECIPIENT_LABELS[record.recipientType] || record.recipientType : '-'}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">#{record.round}차</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.supportType ? SUPPORT_LABELS[record.supportType] || record.supportType : '-'}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.recipientType ? RECIPIENT_LABELS[record.recipientType] || record.recipientType : '-'}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[record.status]}`}>
                       {STATUS_LABELS[record.status] || record.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{record.reviewedBy || '-'}</td>
-                  <td className="px-6 py-4 text-slate-600">{record.reviewedAt ? new Date(record.reviewedAt).toLocaleDateString('ko-KR') : '-'}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.reviewedBy || '-'}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.reviewedAt ? new Date(record.reviewedAt).toLocaleDateString('ko-KR') : '-'}</td>
                   <td className="px-6 py-4">
-                    <button onClick={() => openStatusModal(record)} className="text-sm text-blue-600 hover:underline">상태변경</button>
+                    <button onClick={() => openStatusModal(record)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">상태변경</button>
                   </td>
                 </tr>
               ))}
@@ -193,27 +180,27 @@ export default function ConformityPage() {
       {/* Status Update Modal */}
       {showModal && selectedRecord && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">심사 상태 변경</h2>
-            <p className="text-sm text-slate-500 mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">심사 상태 변경</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               {selectedRecord.customer?.name} - #{selectedRecord.round}차 심사
             </p>
             <form onSubmit={handleStatusUpdate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">상태</label>
-                <select value={statusUpdate.status} onChange={e => setStatusUpdate(s => ({ ...s, status: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">상태</label>
+                <select value={statusUpdate.status} onChange={e => setStatusUpdate(s => ({ ...s, status: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                   {Object.entries(STATUS_LABELS).map(([status, label]) => (
                     <option key={status} value={status}>{label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">메모</label>
-                <textarea value={statusUpdate.notes} onChange={e => setStatusUpdate(s => ({ ...s, notes: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" rows={3} placeholder="검토 메모..." />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">메모</label>
+                <textarea value={statusUpdate.notes} onChange={e => setStatusUpdate(s => ({ ...s, notes: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" rows={3} placeholder="검토 메모..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">필요 서류 (쉼표로 구분)</label>
-                <input type="text" value={statusUpdate.missingDocs} onChange={e => setStatusUpdate(s => ({ ...s, missingDocs: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" placeholder="예: 주민등록초본, 소득증빙" />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">필요 서류 (쉼표로 구분)</label>
+                <input type="text" value={statusUpdate.missingDocs} onChange={e => setStatusUpdate(s => ({ ...s, missingDocs: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" placeholder="예: 주민등록초본, 소득증빙" />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">취소</button>

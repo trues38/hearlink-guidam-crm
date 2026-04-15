@@ -1,0 +1,269 @@
+/* [project]/frontend/app/globals.css [app-client] (css) */
+@theme {
+  --variant-dark: (&:where(.dark, .dark *));
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: .4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn {
+  cursor: pointer;
+  border: none;
+  border-radius: .75rem;
+  outline: none;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  font-weight: 600;
+  transition: all .15s;
+  display: inline-flex;
+}
+
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #4f46e5);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #4338ca);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.input {
+  color: #0f172a;
+  background: #fffc;
+  border: 1px solid #e2e8f0;
+  border-radius: .625rem;
+  outline: none;
+  width: 100%;
+  padding: .5rem .75rem;
+  font-size: .875rem;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px #3b82f626;
+}
+
+.dark .input {
+  color: #f8fafc;
+  background: #1e293b99;
+  border-color: #ffffff26;
+}
+
+.dark .input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px #60a5fa33;
+}
+
+.modal-backdrop {
+  z-index: 50;
+  background: #00000080;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  position: fixed;
+  inset: 0;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 25px 50px #00000026;
+}
+
+.animate-float {
+  animation: 6s ease-in-out infinite float;
+}
+
+.animate-pulse-slow {
+  animation: 8s cubic-bezier(.4, 0, .6, 1) infinite pulse-slow;
+}
+
+.animate-slide-up {
+  animation: .25s ease-out slide-up;
+}
+
+.fc {
+  --fc-border-color: #fff6;
+  --fc-neutral-bg-color: transparent;
+  --fc-page-bg-color: transparent;
+  --fc-today-bg-color: #6366f10d;
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  border: 1px solid #ffffff80;
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border: 1px solid #fff6;
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 12px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.fc-daygrid-day-number {
+  color: #334155;
+  font-weight: 700;
+  padding: 8px !important;
+}
+
+.fc-event {
+  transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 2px 4px #0000000d;
+  background-color: #0000 !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  margin: 1px 4px !important;
+  padding: 2px 8px !important;
+  font-size: .75rem !important;
+  font-weight: 700 !important;
+}
+
+.fc-event:hover {
+  transform: translateY(-1px)scale(1.02);
+  box-shadow: 0 4px 12px #0000001a;
+  z-index: 10 !important;
+}
+
+.fc-event .fc-event-main {
+  text-shadow: 0 1px 2px #0000001a;
+  color: #fff !important;
+}
+
+.fc-event.bg-blue-100 {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
+}
+
+.fc-event.bg-slate-100 {
+  color: #fff !important;
+  background: linear-gradient(135deg, #10b981, #34d399) !important;
+}
+
+.fc .fc-button {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #475569;
+  text-transform: capitalize;
+  background: #ffffffb3;
+  border: 1px solid #fff9;
+  border-radius: .75rem;
+  font-weight: 700;
+  transition: all .2s;
+  box-shadow: 0 2px 10px #00000005;
+}
+
+.fc .fc-button:hover {
+  color: #0f172a;
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px #0000000f;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active {
+  color: #fff;
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.fc .fc-toolbar-title {
+  letter-spacing: -.02em;
+  color: #0f172a;
+  font-size: 1.75rem;
+  font-weight: 900;
+}
+
+.dark .fc {
+  --fc-border-color: #ffffff1a;
+  --fc-today-bg-color: #6366f126;
+}
+
+.dark .fc-theme-standard .fc-scrollgrid, .dark .fc-theme-standard td, .dark .fc-theme-standard th {
+  border-color: #ffffff1a;
+}
+
+.dark .fc .fc-col-header-cell-cushion {
+  color: #94a3b8;
+}
+
+.dark .fc-daygrid-day-number {
+  color: #cbd5e1;
+}
+
+.dark .fc .fc-toolbar-title {
+  color: #f8fafc;
+}
+
+.dark .fc .fc-button {
+  color: #e2e8f0;
+  background: #1e293bb3;
+  border-color: #ffffff1a;
+}
+
+.dark .fc .fc-button:hover {
+  color: #fff;
+  background: #334155;
+}
+
+html {
+  --lightningcss-light: ;
+  --lightningcss-dark: initial;
+  color-scheme: dark;
+}
+
+input, textarea, select {
+  background-color: #0000 !important;
+}
+
+/*# sourceMappingURL=frontend_app_globals_0x2-oy9.css.map*/

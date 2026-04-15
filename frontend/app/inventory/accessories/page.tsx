@@ -81,24 +81,24 @@ export default function AccessoriesPage() {
       </div>
 
       {loading ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">불러오는 중...</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">불러오는 중...</div>
       ) : items.length === 0 ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">등록된 부품이 없습니다.</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">등록된 부품이 없습니다.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map(item => {
             const isLow = item.quantity < item.lowStockAt
             return (
-              <div key={item.id} className={`bg-white rounded-xl shadow-sm border-2 ${isLow ? 'border-red-200' : 'border-slate-200'} p-4`}>
+              <div key={item.id} className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border-2 ${isLow ? 'border-red-200' : 'border-slate-200 dark:border-slate-700'} p-4`}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-bold text-slate-800">{item.name}</h3>
-                    {item.model && <p className="text-sm text-slate-500">{item.model}</p>}
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200">{item.name}</h3>
+                    {item.model && <p className="text-sm text-slate-500 dark:text-slate-400">{item.model}</p>}
                     {item.heardotcom && (
                       <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded mt-1 inline-block">히어닷컴</span>
                     )}
                   </div>
-                  <div className={`text-2xl font-bold ${isLow ? 'text-red-600' : 'text-green-600'}`}>
+                  <div className={`text-2xl font-bold ${isLow ? 'text-red-600' : 'text-green-600 dark:text-emerald-400'}`}>
                     {item.quantity}
                     <span className="text-sm font-normal text-slate-400 ml-1">개</span>
                   </div>
@@ -111,10 +111,10 @@ export default function AccessoriesPage() {
                 )}
 
                 <div className="flex gap-2">
-                  <button onClick={() => handleAdjust(item.id, -10)} className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600 transition-colors">-10</button>
-                  <button onClick={() => handleAdjust(item.id, -1)} className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-600 transition-colors">-1</button>
-                  <button onClick={() => handleAdjust(item.id, 1)} className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-sm font-medium text-blue-700 transition-colors">+1</button>
-                  <button onClick={() => handleAdjust(item.id, 10)} className="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-sm font-medium text-blue-700 transition-colors">+10</button>
+                  <button onClick={() => handleAdjust(item.id, -10)} className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors">-10</button>
+                  <button onClick={() => handleAdjust(item.id, -1)} className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors">-1</button>
+                  <button onClick={() => handleAdjust(item.id, 1)} className="flex-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800/50 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-400 transition-colors">+1</button>
+                  <button onClick={() => handleAdjust(item.id, 10)} className="flex-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800/50 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-400 transition-colors">+10</button>
                 </div>
               </div>
             )
@@ -125,32 +125,32 @@ export default function AccessoriesPage() {
       {/* Add Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">부품 추가</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">부품 추가</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">품목명</label>
-                <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" placeholder="예: 이어휀, 청enna، 도킹스테이션" required />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">품목명</label>
+                <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" placeholder="예: 이어팁, 청소솔, 도킹스테이션" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">모델</label>
-                <input type="text" value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" placeholder="모델명 (선택)" />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">모델</label>
+                <input type="text" value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" placeholder="모델명 (선택)" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">유형</label>
-                <input type="text" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" placeholder="유형 (선택)" />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">유형</label>
+                <input type="text" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" placeholder="유형 (선택)" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">초기 수량</label>
-                <input type="number" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 0 }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" min="0" />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">초기 수량</label>
+                <input type="number" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 0 }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" min="0" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">최소 재고량 (경고 기준)</label>
-                <input type="number" value={form.lowStockAt} onChange={e => setForm(f => ({ ...f, lowStockAt: parseInt(e.target.value) || 5 }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" min="1" />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">최소 재고량 (경고 기준)</label>
+                <input type="number" value={form.lowStockAt} onChange={e => setForm(f => ({ ...f, lowStockAt: parseInt(e.target.value) || 5 }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" min="1" />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.heardotcom} onChange={e => setForm(f => ({ ...f, heardotcom: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
-                <span className="text-sm text-slate-600">히어닷컴 전용</span>
+                <input type="checkbox" checked={form.heardotcom} onChange={e => setForm(f => ({ ...f, heardotcom: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm text-slate-600 dark:text-slate-400">히어닷컴 전용</span>
               </label>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">취소</button>

@@ -234,6 +234,204 @@ app.post('/api/documents/:id/link', async (req, res) => {
   res.json(linkage);
 });
 
+// ============================================
+// v1.0: Document Template Engine
+// ============================================
+
+const { DOCUMENT_TEMPLATES, classifyFieldStates, generateDraft, getSubmissionChecklist } = require('./services/documentEngine');
+
+// Get all document templates
+app.get('/api/document-templates', async (req, res) => {
+  const { purpose, insuranceType } = req.query;
+
+  let templates = Object.values(DOCUMENT_TEMPLATES);
+
+  if (purpose) {
+    templates = templates.filter(t => t.purpose === purpose);
+  }
+  if (insuranceType) {
+    templates = templates.filter(t => t.insuranceType === insuranceType);
+  }
+
+  res.json({ items: templates });
+});
+
+// Get single template by code
+app.get('/api/document-templates/:code', async (req, res) => {
+  const template = DOCUMENT_TEMPLATES[req.params.code];
+  if (!template) {
+    return res.status(404).json({ error: 'Template not found' });
+  }
+  res.json(template);
+});
+
+// Create a new draft for a customer
+app.post('/api/document-drafts', async (req, res) => {
+  const { templateCode, customerId, centerId, extraData } = req.body;
+
+  const template = DOCUMENT_TEMPLATES[templateCode];
+  if (!template) {
+    return res.status(400).json({ error: 'Invalid template code' });
+  }
+
+  // Get customer with related data
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    include: {
+      audiometries: { orderBy: { createdAt: 'desc' }, take: 1, include: { pureToneResults: true } },
+      devices: { orderBy: { createdAt: 'desc' }, take: 1 },
+      conformityRecords: { orderBy: { round: 'desc' }, take: 1 },
+      fittingLogs: { orderBy: { createdAt: 'desc' }, take: 1 }
+    }
+  });
+
+  if (!customer) {
+    return res.status(404).json({ error: 'Customer not found' });
+  }
+
+  // Generate draft
+  const draftResult = generateDraft(template, customer, extraData || {});
+
+  // Save to database
+  const draft = await prisma.documentDraft.create({
+    data: {
+      templateId: templateCode, // Using code as templateId for now
+      customerId,
+      centerId,
+      status: draftResult.canAutoDraft ? 'READY_TO_SUBMIT' : 'PENDING',
+      fieldStates: draftResult.fieldStates,
+      autoFilled: draftResult.autoFilled,
+      missingFields: draftResult.missingFields,
+      missingCritical: draftResult.missingCritical,
+      canAutoDraft: draftResult.canAutoDraft,
+      draftData: draftResult.draftData
+    }
+  });
+
+  // Create customer event
+  await prisma.customerEvent.create({
+    data: {
+      customerId,
+      eventType: 'DRAFT_CREATED',
+      payload: JSON.stringify({ draftId: draft.id, templateCode })
+    }
+  });
+
+  res.status(201).json(draft);
+});
+
+// Get drafts for a customer
+app.get('/api/document-drafts', async (req, res) => {
+  const { customerId, centerId, status, skip = 0, limit = 50 } = req.query;
+
+  const where = {};
+  if (customerId) where.customerId = customerId;
+  if (centerId) where.centerId = centerId;
+  if (status) where.status = status;
+
+  const [items, total] = await Promise.all([
+    prisma.documentDraft.findMany({
+      where,
+      skip: parseInt(skip),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.documentDraft.count({ where })
+  ]);
+
+  res.json({ items, total, skip: parseInt(skip), limit: parseInt(limit) });
+});
+
+// Get single draft
+app.get('/api/document-drafts/:id', async (req, res) => {
+  const draft = await prisma.documentDraft.findUnique({ where: { id: req.params.id } });
+  if (!draft) return res.status(404).json({ error: 'Draft not found' });
+
+  // Get template
+  const template = DOCUMENT_TEMPLATES[draft.templateId];
+
+  // Get checklist
+  const checklist = getSubmissionChecklist(template, draft, {});
+
+  res.json({ ...draft, template, checklist });
+});
+
+// Update draft (fill missing fields)
+app.put('/api/document-drafts/:id', async (req, res) => {
+  const { fieldValues, reviewedBy } = req.body;
+
+  const existing = await prisma.documentDraft.findUnique({ where: { id: req.params.id } });
+  if (!existing) return res.status(404).json({ error: 'Draft not found' });
+
+  // Merge new values with existing auto-filled
+  const updatedAutoFilled = { ...existing.autoFilled, ...fieldValues };
+
+  // Recalculate missing fields
+  const template = DOCUMENT_TEMPLATES[existing.templateId];
+  const draftResult = generateDraft(template, {}, { ...fieldValues, ...existing.autoFilled });
+
+  const updated = await prisma.documentDraft.update({
+    where: { id: req.params.id },
+    data: {
+      autoFilled: { ...updatedAutoFilled, ...draftResult.autoFilled },
+      missingFields: draftResult.missingFields,
+      missingCritical: draftResult.missingCritical,
+      canAutoDraft: draftResult.canAutoDraft,
+      status: draftResult.canAutoDraft ? 'READY_TO_SUBMIT' : 'PENDING',
+      reviewedAt: reviewedBy ? new Date() : undefined,
+      reviewedBy
+    }
+  });
+
+  res.json(updated);
+});
+
+// Calculate missing fields for a draft (without saving)
+app.post('/api/document-drafts/:id/calculate', async (req, res) => {
+  const { extraData } = req.body;
+
+  const draft = await prisma.documentDraft.findUnique({ where: { id: req.params.id } });
+  if (!draft) return res.status(404).json({ error: 'Draft not found' });
+
+  const template = DOCUMENT_TEMPLATES[draft.templateId];
+  if (!template) return res.status(400).json({ error: 'Template not found' });
+
+  // Merge extra data with existing
+  const mergedData = { ...draft.autoFilled, ...extraData };
+  const result = generateDraft(template, {}, mergedData);
+
+  res.json(result);
+});
+
+// Submit draft (mark as submitted)
+app.post('/api/document-drafts/:id/submit', async (req, res) => {
+  const draft = await prisma.documentDraft.findUnique({ where: { id: req.params.id } });
+  if (!draft) return res.status(404).json({ error: 'Draft not found' });
+
+  if (!draft.canAutoDraft) {
+    return res.status(400).json({ error: 'Cannot submit - missing critical fields', missingCritical: draft.missingCritical });
+  }
+
+  const updated = await prisma.documentDraft.update({
+    where: { id: req.params.id },
+    data: {
+      status: 'SUBMITTED',
+      submittedAt: new Date()
+    }
+  });
+
+  // Create customer event
+  await prisma.customerEvent.create({
+    data: {
+      customerId: draft.customerId,
+      eventType: 'DRAFT_SUBMITTED',
+      payload: JSON.stringify({ draftId: draft.id, templateId: draft.templateId })
+    }
+  });
+
+  res.json(updated);
+});
+
 // TossPay Integration
 app.post('/api/payments/toss/request', async (req, res) => {
   const { orderId } = req.body;
@@ -478,6 +676,161 @@ app.put('/api/customers/:id', async (req, res) => {
     data
   });
   res.json(customer);
+});
+
+// ============================================
+// v1.0: Customer Normalization + Duplicate Detection
+// ============================================
+
+// Normalize phone number (remove dashes, spaces)
+function normalizePhoneNumber(phone) {
+  if (!phone) return null;
+  return phone.replace(/[-\s\.]/g, '');
+}
+
+// Normalize resident number
+function normalizeResidentNumber(rn) {
+  if (!rn) return null;
+  // Remove dashes
+  return rn.replace(/[-]/g, '');
+}
+
+// Check for duplicate customers
+app.post('/api/customers/check-duplicate', async (req, res) => {
+  const { centerId, name, contactNumber, residentNumber } = req.body;
+
+  const where = { centerId };
+  const duplicates = [];
+
+  // Normalize inputs
+  const normalizedPhone = normalizePhoneNumber(contactNumber);
+  const normalizedRn = normalizeResidentNumber(residentNumber);
+
+  // Find by name (fuzzy)
+  if (name) {
+    const byName = await prisma.customer.findMany({
+      where: {
+        centerId,
+        name: { contains: name, mode: 'insensitive' }
+      }
+    });
+    duplicates.push(...byName);
+  }
+
+  // Find by phone
+  if (normalizedPhone) {
+    const byPhone = await prisma.customer.findMany({
+      where: {
+        centerId,
+        contactNumber: { contains: normalizedPhone }
+      }
+    });
+    for (const c of byPhone) {
+      if (!duplicates.find(d => d.id === c.id)) duplicates.push(c);
+    }
+  }
+
+  // Find by resident number
+  if (normalizedRn) {
+    const byRn = await prisma.customer.findMany({
+      where: {
+        centerId,
+        residentNumber: { contains: normalizedRn }
+      }
+    });
+    for (const c of byRn) {
+      if (!duplicates.find(d => d.id === c.id)) duplicates.push(c);
+    }
+  }
+
+  res.json({
+    hasDuplicates: duplicates.length > 0,
+    duplicates: duplicates.map(d => ({
+      id: d.id,
+      name: d.name,
+      contactNumber: d.contactNumber,
+      createdAt: d.createdAt
+    }))
+  });
+});
+
+// Validate and normalize customer data before save
+app.post('/api/customers/normalize', async (req, res) => {
+  const { name, contactNumber, residentNumber, postalCode, addressLine1 } = req.body;
+
+  const normalized = {};
+  const warnings = [];
+
+  // Name validation
+  if (name) {
+    normalized.name = name.trim();
+    if (name.length < 2) {
+      warnings.push({ field: 'name', message: '이름이 너무 짧습니다' });
+    }
+  }
+
+  // Phone normalization
+  if (contactNumber) {
+    normalized.contactNumber = normalizePhoneNumber(contactNumber);
+    // Check format (Korean mobile: 010-XXXX-XXXX)
+    const phoneRegex = /^01[0-9]{9,10}$/;
+    if (!phoneRegex.test(normalized.contactNumber)) {
+      warnings.push({ field: 'contactNumber', message: '올바른 전화번호 형식이 아닙니다' });
+    }
+  }
+
+  // Resident number validation
+  if (residentNumber) {
+    normalized.residentNumber = normalizeResidentNumber(residentNumber);
+    if (normalized.residentNumber && normalized.residentNumber.length !== 13) {
+      warnings.push({ field: 'residentNumber', message: '올바른 주민등록번호 형식이 아닙니다' });
+    }
+  }
+
+  // Address normalization
+  if (postalCode) {
+    normalized.postalCode = postalCode.replace(/[-\s]/g, '');
+  }
+
+  if (addressLine1) {
+    normalized.addressLine1 = addressLine1.trim();
+  }
+
+  res.json({
+    normalized,
+    warnings,
+    isValid: warnings.length === 0
+  });
+});
+
+// Get recent customers for quick selection
+app.get('/api/customers/recent', async (req, res) => {
+  const { centerId, limit = 5 } = req.query;
+
+  if (!centerId) {
+    return res.status(400).json({ error: 'centerId is required' });
+  }
+
+  const customers = await prisma.customer.findMany({
+    where: { centerId },
+    orderBy: { createdAt: 'desc' },
+    take: parseInt(limit),
+    select: {
+      id: true,
+      name: true,
+      contactNumber: true,
+      createdAt: true,
+      _count: {
+        select: {
+          tasks: true,
+          documents: true,
+          conformityRecords: true
+        }
+      }
+    }
+  });
+
+  res.json({ items: customers });
 });
 
 // Consultation CRUD
@@ -880,6 +1233,181 @@ app.put('/api/conformity/:customerId/status', async (req, res) => {
 });
 
 // ============================================
+// v1.0: PTA Calculation + Government Support
+// ============================================
+
+const { 
+  calculatePTA, determineHearingGrade, determineGovernmentTrack, 
+  suggestNextActions, suggestCustomerPosition 
+} = require('./services/governmentSupport');
+
+// Calculate PTA from audiometry data
+app.post('/api/pta/calculate', async (req, res) => {
+  const { customerId, centerId } = req.body;
+
+  // Get latest audiometry
+  const audiometry = await prisma.audiometry.findFirst({
+    where: { customerId },
+    include: { pureToneResults: true }
+  });
+
+  if (!audiometry) {
+    return res.status(404).json({ error: 'No audiometry data found' });
+  }
+
+  // Calculate PTA for each ear
+  const leftEar = audiometry.pureToneResults.filter(r => r.ear === 'LEFT');
+  const rightEar = audiometry.pureToneResults.filter(r => r.ear === 'RIGHT');
+
+  const ptaLeft = calculatePTA(leftEar);
+  const ptaRight = calculatePTA(rightEar);
+
+  // Determine grades
+  const gradeLeft = determineHearingGrade(ptaLeft.pta);
+  const gradeRight = determineHearingGrade(ptaRight.pta);
+
+  // Get better ear grade
+  const betterPta = Math.min(ptaLeft.pta || 100, ptaRight.pta || 100);
+  const overallGrade = determineHearingGrade(betterPta);
+
+  // Save PTA record
+  const ptaRecord = await prisma.pTARecord.create({
+    data: {
+      centerId,
+      customerId,
+      ear: 'LEFT',
+      pta4Left: ptaLeft.pta,
+      pta4Right: ptaRight.pta,
+      grade: overallGrade
+    }
+  });
+
+  // Create customer event
+  await prisma.customerEvent.create({
+    data: {
+      customerId,
+      eventType: 'PTA_CALCULATED',
+      payload: JSON.stringify({ ptaLeft: ptaLeft.pta, ptaRight: ptaRight.pta, grade: overallGrade })
+    }
+  });
+
+  res.json({
+    ptaLeft,
+    ptaRight,
+    gradeLeft,
+    gradeRight,
+    overallGrade,
+    ptaRecordId: ptaRecord.id
+  });
+});
+
+// Get PTA records for customer
+app.get('/api/pta/:customerId', async (req, res) => {
+  const records = await prisma.pTARecord.findMany({
+    where: { customerId: req.params.customerId },
+    orderBy: { computedAt: 'desc' }
+  });
+  res.json({ items: records });
+});
+
+// Calculate government support track
+app.post('/api/government-support/calculate', async (req, res) => {
+  const { customerId, ptaRecordId } = req.body;
+
+  // Get customer with related data
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    include: {
+      audiometries: { orderBy: { createdAt: 'desc' }, take: 1, include: { pureToneResults: true } },
+      devices: true,
+      fittingLogs: { orderBy: { createdAt: 'desc' }, take: 1 }
+    }
+  });
+
+  if (!customer) {
+    return res.status(404).json({ error: 'Customer not found' });
+  }
+
+  // Get PTA if provided
+  let ptaResult = null;
+  if (ptaRecordId) {
+    const ptaRecord = await prisma.pTARecord.findUnique({ where: { id: ptaRecordId } });
+    if (ptaRecord) {
+      ptaResult = {
+        grade: ptaRecord.grade,
+        pta4Left: ptaRecord.pta4Left,
+        pta4Right: ptaRecord.pta4Right
+      };
+    }
+  } else {
+    // Calculate PTA from latest audiometry
+    const audiometry = customer.audiometries[0];
+    if (audiometry) {
+      const leftEar = audiometry.pureToneResults.filter(r => r.ear === 'LEFT');
+      const rightEar = audiometry.pureToneResults.filter(r => r.ear === 'RIGHT');
+      const ptaLeft = calculatePTA(leftEar);
+      const ptaRight = calculatePTA(rightEar);
+      const betterPta = Math.min(ptaLeft.pta || 100, ptaRight.pta || 100);
+      ptaResult = {
+        grade: determineHearingGrade(betterPta),
+        pta4Left: ptaLeft.pta,
+        pta4Right: ptaRight.pta
+      };
+    }
+  }
+
+  // Determine government track
+  const track = determineGovernmentTrack(customer, ptaResult);
+
+  res.json({
+    customerId,
+    pta: ptaResult,
+    track,
+    customer: {
+      id: customer.id,
+      name: customer.name,
+      recipientType: customer.recipientType,
+      governmentSupportType: customer.governmentSupportType
+    }
+  });
+});
+
+// Get customer position + next actions
+app.get('/api/customers/:id/next-actions', async (req, res) => {
+  const { id } = req.params;
+
+  const customer = await prisma.customer.findUnique({
+    where: { id },
+    include: {
+      devices: true,
+      fittingLogs: { orderBy: { createdAt: 'desc' }, take: 1 },
+      audiometries: { orderBy: { createdAt: 'desc' }, take: 1 },
+      ptaRecords: { orderBy: { computedAt: 'desc' }, take: 1 }
+    }
+  });
+
+  if (!customer) {
+    return res.status(404).json({ error: 'Customer not found' });
+  }
+
+  // Get latest PTA
+  const latestPta = customer.ptaRecords[0];
+  const ptaResult = latestPta ? {
+    grade: latestPta.grade,
+    pta4Left: latestPta.pta4Left,
+    pta4Right: latestPta.pta4Right
+  } : null;
+
+  // Determine track
+  const track = determineGovernmentTrack(customer, ptaResult);
+
+  // Get suggestions
+  const suggestions = suggestNextActions(customer, track, ptaResult);
+
+  res.json(suggestions);
+});
+
+// ============================================
 // Phase 3: Tasks + Rule Engine
 // ============================================
 
@@ -1145,6 +1673,143 @@ app.get('/api/stats/dashboard', async (req, res) => {
     conformityStats,
     stageDistribution
   });
+});
+
+// ============================================
+// v1.0: Audit Log API
+// ============================================
+
+const { createAuditLog, getAuditLogs, extractClientInfo } = require('./services/auditLogger');
+
+// Get audit logs
+app.get('/api/audit-logs', async (req, res) => {
+  const { centerId, entityType, entityId, skip = 0, limit = 50 } = req.query;
+  
+  if (!centerId) {
+    return res.status(400).json({ error: 'centerId is required' });
+  }
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (centerId && !uuidRegex.test(centerId)) {
+    return res.status(400).json({ error: 'Invalid centerId format' });
+  }
+
+  const result = await getAuditLogs(prisma, { centerId, entityType, entityId, skip, limit });
+  res.json(result);
+});
+
+// ============================================
+// v1.0: Submission Layer (Fax Queue + ZIP Package)
+// ============================================
+
+const { queueFax, retryFax, markFaxSent, getFaxQueueStatus, generateSubmissionPackage } = require('./services/submissionService');
+
+// Get fax queue
+app.get('/api/submissions/fax-queue', async (req, res) => {
+  const { centerId, customerId, status } = req.query;
+  
+  if (!centerId) {
+    return res.status(400).json({ error: 'centerId is required' });
+  }
+
+  const result = await getFaxQueueStatus(prisma, { centerId, customerId, status });
+  res.json(result);
+});
+
+// Queue fax for submission
+app.post('/api/submissions/fax-queue', async (req, res) => {
+  const { centerId, customerId, draftId, faxNumber, documentType, fileUrl, idempotencyKey } = req.body;
+
+  if (!centerId || !faxNumber || !documentType) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const result = await queueFax(prisma, {
+    centerId,
+    customerId,
+    draftId,
+    faxNumber,
+    documentType,
+    fileUrl,
+    idempotencyKey
+  });
+
+  if (result.success && !result.alreadyExists) {
+    return res.status(201).json(result);
+  }
+  res.json(result);
+});
+
+// Retry failed fax
+app.post('/api/submissions/fax-queue/:id/retry', async (req, res) => {
+  const { maxAttempts } = req.body;
+  const result = await retryFax(prisma, req.params.id, maxAttempts || 3);
+  
+  if (result.error) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Update fax status
+app.put('/api/submissions/fax-queue/:id/status', async (req, res) => {
+  const { status, errorMessage } = req.body;
+  
+  let result;
+  if (status === 'SENT') {
+    result = await markFaxSent(prisma, req.params.id);
+  } else if (status === 'FAILED') {
+    result = await markFaxFailed(prisma, req.params.id, errorMessage);
+  } else {
+    result = await prisma.faxQueue.update({
+      where: { id: req.params.id },
+      data: { status }
+    });
+  }
+  
+  res.json(result);
+});
+
+// Generate submission package (for local government)
+app.post('/api/submissions/package', async (req, res) => {
+  const { centerId, customerId, track, includedDraftIds } = req.body;
+
+  if (!centerId || !customerId || !track) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  if (!['NATIONAL', 'LOCAL'].includes(track)) {
+    return res.status(400).json({ error: 'Invalid track. Must be NATIONAL or LOCAL' });
+  }
+
+  const result = await generateSubmissionPackage(prisma, {
+    centerId,
+    customerId,
+    track,
+    includedDraftIds: includedDraftIds || []
+  });
+
+  if (result.error) {
+    return res.status(404).json(result);
+  }
+
+  res.json(result);
+});
+
+// Get submission packages
+app.get('/api/submissions/packages', async (req, res) => {
+  const { centerId, customerId, status } = req.query;
+  
+  const where = { centerId };
+  if (customerId) where.customerId = customerId;
+  if (status) where.status = status;
+
+  const items = await prisma.submissionPackage.findMany({
+    where,
+    orderBy: { createdAt: 'desc' }
+  });
+
+  res.json({ items });
 });
 
 // Health check endpoint for monitoring

@@ -1,0 +1,19 @@
+{"timestamp":"00:00:01.490","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:02:11.563","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:04:23.986","source":"Server","level":"LOG","message":"✓ Compiled in 147ms"}
+{"timestamp":"00:05:16.353","source":"Server","level":"LOG","message":"✓ Compiled in 1276ms"}
+{"timestamp":"00:06:52.737","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:13:55.788","source":"Server","level":"LOG","message":"✓ Compiled in 1073ms"}
+{"timestamp":"00:19:52.615","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:20:47.448","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:25:47.146","source":"Server","level":"LOG","message":"✓ Compiled in 38ms"}
+{"timestamp":"00:25:47.192","source":"Server","level":"LOG","message":"✓ Compiled in 22ms"}
+{"timestamp":"00:25:49.490","source":"Server","level":"LOG","message":"✓ Compiled in 74ms"}
+{"timestamp":"00:25:49.593","source":"Server","level":"LOG","message":"✓ Compiled in 26ms"}
+{"timestamp":"00:25:50.057","source":"Server","level":"LOG","message":"✓ Compiled in 353ms"}
+{"timestamp":"00:31:26.238","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:33:45.676","source":"Server","level":"LOG","message":"✓ Compiled in 223ms"}
+{"timestamp":"00:48:24.545","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:54:28.445","source":"Server","level":"LOG","message":"✓ Compiled in 79ms"}
+{"timestamp":"00:54:44.539","source":"Server","level":"LOG","message":"✓ Compiled in 32ms"}
+{"timestamp":"00:54:58.842","source":"Server","level":"LOG","message":"✓ Compiled in 26ms"}

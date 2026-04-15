@@ -11,7 +11,7 @@ const EARS = ['LEFT', 'RIGHT']
 const COLORS = ['RED', 'BLUE', 'BEIGE', 'BLACK', 'SILVER', 'OTHER']
 
 const brandLabels: Record<string, string> = {
-  OTICON: '오티콘', SIGNIA: '시그니아', BELTON: '벨톤', STARKEY: '스타키', PHONAK: '포낙', WIDEX: '와이드кс'
+  OTICON: '오티콘', SIGNIA: '시그니아', BELTON: '벨톤', STARKEY: '스타키', PHONAK: '포낙', WIDEX: '와이드'
 }
 const typeLabels: Record<string, string> = {
   RIC: '오픈형', ITE: '귓속형', BTE: '귀걸이형', BONE_CONDUCTION: '골도형'
@@ -75,17 +75,24 @@ export default function DevicesPage() {
     setSubmitting(true)
     try {
       const centerId = localStorage.getItem('centerId') || 'default-center-id'
-      const res = await fetch(`${API_BASE}/api/devices`, {
-        method: 'POST',
+      const url = selectedDevice 
+        ? `${API_BASE}/api/devices/${selectedDevice.id}` 
+        : `${API_BASE}/api/devices`
+      const method = selectedDevice ? 'PUT' : 'POST'
+      const body = selectedDevice ? form : { ...form, centerId }
+      
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, centerId })
+        body: JSON.stringify(body)
       })
       if (!res.ok) throw new Error()
       setShowModal(false)
+      setSelectedDevice(null)
       setForm({ brand: 'OTICON', model: '', type: 'RIC', ear: 'LEFT', color: 'BEIGE', heardotcom: false, used: false, governmentSupport: false })
       fetchDevices()
     } catch {
-      alert('장비 등록에 실패했습니다')
+      alert(selectedDevice ? '장비 수정에 실패했습니다' : '장비 등록에 실패했습니다')
     } finally {
       setSubmitting(false)
     }
@@ -125,8 +132,8 @@ export default function DevicesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">장비 관리</h1>
-          <p className="text-sm text-slate-500 mt-1">총 {filtered.length}개</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">장비 관리</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">총 {filtered.length}개</p>
         </div>
         <div className="flex gap-2">
           <Link href="/inventory" className="btn btn-outline">
@@ -145,16 +152,16 @@ export default function DevicesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 flex gap-4 flex-wrap">
-        <select value={filter.brand} onChange={e => setFilter(f => ({ ...f, brand: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 flex gap-4 flex-wrap">
+        <select value={filter.brand} onChange={e => setFilter(f => ({ ...f, brand: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
           <option value="">전체 브랜드</option>
           {BRANDS.map(b => <option key={b} value={b}>{brandLabels[b]}</option>)}
         </select>
-        <select value={filter.type} onChange={e => setFilter(f => ({ ...f, type: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+        <select value={filter.type} onChange={e => setFilter(f => ({ ...f, type: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
           <option value="">전체 유형</option>
           {TYPES.map(t => <option key={t} value={t}>{typeLabels[t]}</option>)}
         </select>
-        <select value={filter.ear} onChange={e => setFilter(f => ({ ...f, ear: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+        <select value={filter.ear} onChange={e => setFilter(f => ({ ...f, ear: e.target.value }))} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
           <option value="">전체 귀</option>
           {EARS.map(e => <option key={e} value={e}>{earLabels[e]}</option>)}
         </select>
@@ -162,48 +169,48 @@ export default function DevicesPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">불러오는 중...</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">불러오는 중...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-slate-400 py-20 text-center bg-white rounded-xl shadow-sm">등록된 장비가 없습니다.</div>
+        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">등록된 장비가 없습니다.</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">브랜드</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">모델</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">유형</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">귀</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">색상</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">시리얼</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">플래그</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">관리</th>
+              <tr className="bg-slate-50 border-b border-slate-200 dark:border-slate-700">
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">브랜드</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">모델</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">유형</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">귀</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">색상</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">시리얼</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">플래그</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map(device => (
-                <tr key={device.id} className="hover:bg-slate-50">
+                <tr key={device.id} className="hover:bg-slate-50 dark:hover:bg-slate-900">
                   <td className="px-6 py-4">
-                    <span className="font-medium text-slate-800">{brandLabels[device.brand] || device.brand}</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{brandLabels[device.brand] || device.brand}</span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{device.model}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{device.model}</td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400">
                       {typeLabels[device.type] || device.type}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{earLabels[device.ear]}</td>
-                  <td className="px-6 py-4 text-slate-600">{colorLabels[device.color] || device.color}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{earLabels[device.ear]}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{colorLabels[device.color] || device.color}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       {device.serialNumbers.length > 0 ? (
                         device.serialNumbers.map((s, i) => (
-                          <span key={i} className="text-xs bg-slate-100 px-2 py-0.5 rounded font-mono">{s.serialNumber}</span>
+                          <span key={i} className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">{s.serialNumber}</span>
                         ))
                       ) : (
                         <span className="text-xs text-slate-400">없음</span>
                       )}
-                      <button onClick={() => openSerialModal(device)} className="text-xs text-blue-600 hover:underline">
+                      <button onClick={() => openSerialModal(device)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
                         + 시리얼 추가
                       </button>
                     </div>
@@ -211,12 +218,12 @@ export default function DevicesPage() {
                   <td className="px-6 py-4">
                     <div className="flex gap-1 flex-wrap">
                       {device.heardotcom && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">히어닷컴</span>}
-                      {device.used && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">중고</span>}
-                      {device.governmentSupport && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">정부지원</span>}
+                      {device.used && <span className="text-xs bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded">중고</span>}
+                      {device.governmentSupport && <span className="text-xs bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400 px-2 py-0.5 rounded">정부지원</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <button onClick={() => { setSelectedDevice(device); setForm({ brand: device.brand, model: device.model, type: device.type, ear: device.ear, color: device.color, heardotcom: device.heardotcom, used: device.used, governmentSupport: device.governmentSupport }); setShowModal(true) }} className="text-sm text-blue-600 hover:underline">수정</button>
+                    <button onClick={() => { setSelectedDevice(device); setForm({ brand: device.brand, model: device.model, type: device.type, ear: device.ear, color: device.color, heardotcom: device.heardotcom, used: device.used, governmentSupport: device.governmentSupport }); setShowModal(true) }} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">수정</button>
                   </td>
                 </tr>
               ))}
@@ -228,51 +235,51 @@ export default function DevicesPage() {
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">{selectedDevice ? '장비 수정' : '새 장비 등록'}</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">{selectedDevice ? '장비 수정' : '새 장비 등록'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">브랜드</label>
-                  <select value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">브랜드</label>
+                  <select value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     {BRANDS.map(b => <option key={b} value={b}>{brandLabels[b]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">모델</label>
-                  <input type="text" value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200" required />
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">모델</label>
+                  <input type="text" value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">유형</label>
-                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">유형</label>
+                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     {TYPES.map(t => <option key={t} value={t}>{typeLabels[t]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">귀</label>
-                  <select value={form.ear} onChange={e => setForm(f => ({ ...f, ear: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">귀</label>
+                  <select value={form.ear} onChange={e => setForm(f => ({ ...f, ear: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     {EARS.map(e => <option key={e} value={e}>{earLabels[e]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">색상</label>
-                  <select value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">색상</label>
+                  <select value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
                     {COLORS.map(c => <option key={c} value={c}>{colorLabels[c]}</option>)}
                   </select>
                 </div>
               </div>
               <div className="flex gap-4 flex-wrap">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.heardotcom} onChange={e => setForm(f => ({ ...f, heardotcom: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
-                  <span className="text-sm text-slate-600">히어닷컴</span>
+                  <input type="checkbox" checked={form.heardotcom} onChange={e => setForm(f => ({ ...f, heardotcom: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm text-slate-600 dark:text-slate-400">히어닷컴</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.used} onChange={e => setForm(f => ({ ...f, used: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
-                  <span className="text-sm text-slate-600">중고</span>
+                  <input type="checkbox" checked={form.used} onChange={e => setForm(f => ({ ...f, used: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm text-slate-600 dark:text-slate-400">중고</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.governmentSupport} onChange={e => setForm(f => ({ ...f, governmentSupport: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
-                  <span className="text-sm text-slate-600">정부지원</span>
+                  <input type="checkbox" checked={form.governmentSupport} onChange={e => setForm(f => ({ ...f, governmentSupport: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm text-slate-600 dark:text-slate-400">정부지원</span>
                 </label>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -287,15 +294,15 @@ export default function DevicesPage() {
       {/* Serial Modal */}
       {showSerialModal && selectedDevice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">
               시리얼 번호 추가<br />
-              <span className="text-sm font-normal text-slate-500">{brandLabels[selectedDevice.brand]} {selectedDevice.model}</span>
+              <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{brandLabels[selectedDevice.brand]} {selectedDevice.model}</span>
             </h2>
             <form onSubmit={handleAddSerial} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">시리얼 번호</label>
-                <input type="text" value={serialForm.serialNumber} onChange={e => setSerialForm(f => ({ ...f, serialNumber: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 font-mono" placeholder="예: SN-2024-001" required />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">시리얼 번호</label>
+                <input type="text" value={serialForm.serialNumber} onChange={e => setSerialForm(f => ({ ...f, serialNumber: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-mono" placeholder="예: SN-2024-001" required />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => { setShowSerialModal(false); setSelectedDevice(null) }} className="btn btn-outline">취소</button>

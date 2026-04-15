@@ -100,8 +100,8 @@ export default function CustomersPage() {
   )
 
   const classificationColors: Record<string, string> = {
-    SELF: 'bg-blue-100 text-blue-700',
-    OTHER: 'bg-green-100 text-green-700',
+    SELF: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400',
+    OTHER: 'bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400',
     HEARDOTCOM: 'bg-purple-100 text-purple-700'
   }
 
@@ -109,10 +109,10 @@ export default function CustomersPage() {
     <div className="space-y-8 max-w-[1600px] mx-auto animate-slide-up">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-cyan-800 tracking-tight drop-shadow-sm">
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-cyan-800 dark:from-blue-400 dark:to-cyan-200 tracking-tight drop-shadow-sm">
             고객 관리
           </h1>
-          <p className="text-sm font-semibold text-slate-500 mt-1">총 {filtered.length}명의 소중한 고객이 등록되어 있습니다.</p>
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">총 {filtered.length}명의 소중한 고객이 등록되어 있습니다.</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -136,58 +136,59 @@ export default function CustomersPage() {
           placeholder="이름 또는 전화번호로 검색해보세요..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="relative w-full max-w-lg px-6 py-4 rounded-[1.25rem] border border-white/80 bg-white/60 backdrop-blur-xl shadow-sm focus:outline-none focus:ring-0 text-slate-700 font-medium placeholder-slate-400 transition-all"
+          className="relative w-full max-w-lg px-6 py-4 rounded-[1.25rem] border border-white/80 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-sm focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-200 font-medium placeholder-slate-400 transition-all"
         />
       </div>
 
       {loading ? (
         <div className="text-slate-400 py-20 text-center font-bold animate-pulse">데이터를 불러오는 중입니다...</div>
       ) : filtered.length === 0 ? (
-        <div className="py-20 flex flex-col items-center justify-center text-slate-400 bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <div className="w-20 h-20 mb-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-4xl shadow-inner animate-float">🔍</div>
+        <div className="py-20 flex flex-col items-center justify-center text-slate-400 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="w-20 h-20 mb-5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-4xl shadow-inner animate-float">🔍</div>
           <p className="font-bold text-[15px]">검색된 고객이 없습니다.</p>
         </div>
       ) : (
-        <div className="bg-white/40 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 overflow-hidden relative z-10 group/table transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)]">
+        <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-white/60 dark:border-white/10 relative z-10 group/table transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)]">
            {/* Glow Effect */}
            <div className="absolute top-0 right-1/4 w-96 h-96 bg-gradient-to-br from-cyan-300/20 to-transparent blur-3xl rounded-full pointer-events-none opacity-0 group-hover/table:opacity-100 transition-opacity duration-700 -z-10"></div>
            
-          <table className="w-full text-left border-collapse">
+           <div className="overflow-x-auto w-full custom-scrollbar rounded-[2.5rem]">
+             <table className="w-full min-w-[800px] text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/60">
-                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 uppercase tracking-widest bg-transparent">고객명</th>
-                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 uppercase tracking-widest bg-transparent">연락처</th>
-                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 uppercase tracking-widest bg-transparent">분류</th>
-                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 uppercase tracking-widest bg-transparent">정부지원</th>
-                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 uppercase tracking-widest bg-transparent">수급구분</th>
-                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 uppercase tracking-widest bg-transparent text-right">등록일</th>
+              <tr className="border-b border-white/60 dark:border-white/10">
+                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-transparent">고객명</th>
+                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-transparent">연락처</th>
+                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-transparent">분류</th>
+                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-transparent">정부지원</th>
+                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-transparent">수급구분</th>
+                <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-transparent text-right">등록일</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/40">
+            <tbody className="divide-y divide-white/40 dark:divide-white/10">
               {filtered.map(c => (
-                <tr key={c.id} className="group/row hover:bg-white/80 transition-all duration-300 cursor-pointer" onClick={() => router.push(`/customers/${c.id}`)}>
+                <tr key={c.id} className="group/row hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-800/40 transition-all duration-300 cursor-pointer" onClick={() => router.push(`/customers/${c.id}`)}>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-slate-500 font-bold group-hover/row:scale-110 group-hover/row:from-blue-100 group-hover/row:to-cyan-100 group-hover/row:text-blue-600 transition-all duration-300">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 border border-white dark:border-slate-700 shadow-sm flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold group-hover/row:scale-110 group-hover/row:from-blue-100 group-hover/row:to-cyan-100 dark:group-hover/row:from-blue-900 dark:group-hover/row:to-cyan-900 group-hover/row:text-blue-600 dark:group-hover/row:text-blue-400 transition-all duration-300">
                         {c.name.charAt(0)}
                       </div>
-                      <span className="font-extrabold text-[15px] text-slate-800 group-hover/row:text-blue-700 transition-colors">{c.name}</span>
+                      <span className="font-extrabold text-[15px] text-slate-800 dark:text-slate-200 group-hover/row:text-blue-700 dark:group-hover/row:text-blue-400 transition-colors">{c.name}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-5 font-medium text-slate-500">{c.contactNumber}</td>
+                  <td className="px-8 py-5 font-medium text-slate-500 dark:text-slate-400">{c.contactNumber}</td>
                   <td className="px-8 py-5">
-                    <span className={`px-3 py-1.5 rounded-xl text-[12px] font-black tracking-wide border shadow-sm ${classificationColors[c.classification as keyof typeof classificationColors] || 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                    <span className={`px-3 py-1.5 rounded-xl text-[12px] font-black tracking-wide border dark:border-slate-700 shadow-sm ${classificationColors[c.classification as keyof typeof classificationColors] || 'bg-slate-100 text-slate-500 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
                       {labels.classification[c.classification as keyof typeof labels.classification] || c.classification}
                     </span>
                   </td>
-                  <td className="px-8 py-5 font-semibold text-slate-500">
+                  <td className="px-8 py-5 font-semibold text-slate-500 dark:text-slate-400">
                     {c.governmentSupportType ? labels.governmentSupport[c.governmentSupportType as keyof typeof labels.governmentSupport] || c.governmentSupportType : <span className="opacity-30">-</span>}
                   </td>
-                  <td className="px-8 py-5 font-semibold text-slate-500">
+                  <td className="px-8 py-5 font-semibold text-slate-500 dark:text-slate-400">
                     {c.recipientType ? labels.recipient[c.recipientType as keyof typeof labels.recipient] || c.recipientType : <span className="opacity-30">-</span>}
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <span className="text-[13px] font-bold text-slate-400 bg-white/50 px-3 py-1.5 rounded-xl border border-white/80 shadow-sm group-hover/row:border-blue-100 transition-colors">
+                    <span className="text-[13px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border border-white/80 dark:border-white/10 shadow-sm group-hover/row:border-blue-100 dark:group-hover/row:border-blue-900/50 transition-colors">
                        {new Date(c.createdAt).toLocaleDateString('ko-KR')}
                     </span>
                   </td>
@@ -195,6 +196,7 @@ export default function CustomersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -202,13 +204,13 @@ export default function CustomersPage() {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-slide-up" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"></div>
 
-          <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2rem] border border-white shadow-[0_30px_60px_rgb(0,0,0,0.15)] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent pointer-events-none z-0"></div>
+          <div className="relative bg-white/80 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white dark:border-white/10 shadow-[0_30px_60px_rgb(0,0,0,0.15)] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 dark:from-slate-800/50 to-transparent pointer-events-none z-0"></div>
             
-            <div className="px-8 py-6 border-b border-slate-200/50 flex items-center justify-between shrink-0 relative z-10">
-              <h2 className="text-2xl font-black text-slate-800 tracking-tight">새 고객 등록</h2>
-              <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-xl bg-slate-100/80 hover:bg-slate-200 flex items-center justify-center transition-colors">
-                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="px-8 py-6 border-b border-slate-200/50 dark:border-white/10 flex items-center justify-between shrink-0 relative z-10">
+              <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">새 고객 등록</h2>
+              <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition-colors">
+                <svg className="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -218,15 +220,15 @@ export default function CustomersPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">이름 <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">이름 <span className="text-red-500">*</span></label>
                   <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="input" placeholder="홍길동" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">연락처 <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">연락처 <span className="text-red-500">*</span></label>
                   <input type="text" value={form.contactNumber} onChange={e => setForm({ ...form, contactNumber: e.target.value })} className="input" placeholder="010-0000-0000" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">분류</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">분류</label>
                   <select value={form.classification} onChange={e => setForm({ ...form, classification: e.target.value })} className="input">
                     <option value="SELF">자가</option>
                     <option value="OTHER">타기관</option>
@@ -234,7 +236,7 @@ export default function CustomersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">성별</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">성별</label>
                   <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className="input">
                     <option value="">선택</option>
                     <option value="MALE">남성</option>
@@ -242,15 +244,15 @@ export default function CustomersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">생년월일</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">생년월일</label>
                   <input type="date" value={form.birthDate} onChange={e => setForm({ ...form, birthDate: e.target.value })} className="input" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">이메일</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">이메일</label>
                   <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="input" placeholder="example@email.com" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">정부지원유형</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">정부지원유형</label>
                   <select value={form.governmentSupportType} onChange={e => setForm({ ...form, governmentSupportType: e.target.value })} className="input">
                     <option value="">선택</option>
                     <option value="DISABILITY_GRADE_HOLDER">장애등급소지자</option>
@@ -260,7 +262,7 @@ export default function CustomersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">수급구분</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">수급구분</label>
                   <select value={form.recipientType} onChange={e => setForm({ ...form, recipientType: e.target.value })} className="input">
                     <option value="">선택</option>
                     <option value="RECIPIENT">수급자 (지자체 100%)</option>
@@ -269,7 +271,7 @@ export default function CustomersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">인증유형</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">인증유형</label>
                   <select value={form.processType} onChange={e => setForm({ ...form, processType: e.target.value })} className="input">
                     <option value="">선택</option>
                     <option value="PRE_CERTIFICATION">사전인증</option>
@@ -277,7 +279,7 @@ export default function CustomersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">청력장애유형</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">청력장애유형</label>
                   <select value={form.lossType} onChange={e => setForm({ ...form, lossType: e.target.value })} className="input">
                     <option value="">선택</option>
                     <option value="CONDUCTIVE">전음성</option>
@@ -287,25 +289,33 @@ export default function CustomersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">유입경로</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">유입경로</label>
                   <input type="text" value={form.referralSource} onChange={e => setForm({ ...form, referralSource: e.target.value })} className="input" placeholder="지인추천, 병원등" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">병원</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">병원</label>
                   <input type="text" value={form.hospitalName} onChange={e => setForm({ ...form, hospitalName: e.target.value })} className="input" placeholder="비뢰 ENT 등" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">메모 (특이사항)</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">메모 (특이사항)</label>
                 <textarea value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} className="input resize-none h-24" placeholder="작업 환경, 주 관심사, 혹은 방문 시 특이사항 등..." />
               </div>
               
-              <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-slate-200/60 pb-2">
-                <button type="button" onClick={() => setShowModal(false)} className="group px-6 py-3 rounded-xl font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 hover:bg-slate-200">
-                  취소
-                </button>
-                <button type="submit" disabled={submitting} className="group relative px-8 py-3 rounded-xl font-bold text-white transition-all overflow-hidden shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300 group-hover:scale-105"></div>
+              <div className="px-8 py-6 border-t border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end gap-3 shrink-0 relative z-10">
+              <button 
+                type="button" 
+                onClick={() => setShowModal(false)}
+                className="px-6 py-2.5 rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                disabled={submitting}
+              >
+                취소
+              </button>
+              <button 
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="group relative px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 disabled:opacity-50 transition-all overflow-hidden flex items-center justify-center min-w-[100px]"
+              >    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300 group-hover:scale-105"></div>
                   <span className="relative z-10 flex items-center gap-2">
                     {submitting ? '등록 중...' : '선택 완료 / 등록하기'}
                   </span>
