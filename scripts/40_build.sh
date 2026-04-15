@@ -1,10 +1,12 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
 echo "=== 40_build.sh - 백엔드/프론트 빌드 ==="
 
-PROJECT_DIR="/Users/js/Documents/project/hearlink-guidam-crm"
-cd $PROJECT_DIR
+cd "$PROJECT_DIR"
 
 echo "[1/4] Backend 의존성 설치..."
 cd $PROJECT_DIR

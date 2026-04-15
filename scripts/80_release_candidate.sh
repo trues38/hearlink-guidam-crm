@@ -1,9 +1,11 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
 echo "=== 80_release_candidate.sh - RC 패키징/태깅 ==="
 
-PROJECT_DIR="/Users/js/Documents/project/hearlink-guidam-crm"
-cd $PROJECT_DIR
+cd "$PROJECT_DIR"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RC_DIR="$PROJECT_DIR/release_candidates/rc_${TIMESTAMP}"

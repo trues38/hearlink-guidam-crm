@@ -1,10 +1,12 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
 echo "=== 50_test.sh - lint/typecheck/unit/integration ==="
 
-PROJECT_DIR="/Users/js/Documents/project/hearlink-guidam-crm"
-cd $PROJECT_DIR
+cd "$PROJECT_DIR"
 
 echo "[1/5] TypeScript 체크 (Frontend)..."
 cd $PROJECT_DIR/frontend

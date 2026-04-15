@@ -6,6 +6,7 @@
 import json
 import os
 import sys
+from pathlib import Path
 
 
 def main():
@@ -96,9 +97,8 @@ def main():
     }
 
     # Output seed JSON for backend to consume
-    output_path = (
-        "/Users/js/Documents/project/hearlink-guidam-crm/server/seeds/master_seed.json"
-    )
+    project_dir = Path(__file__).resolve().parents[1]
+    output_path = project_dir / "server" / "seeds" / "master_seed.json"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as f:

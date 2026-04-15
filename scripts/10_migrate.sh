@@ -1,9 +1,12 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
 echo "=== 10_migrate.sh - 스키마 마이그레이션 ==="
 
-cd /Users/js/Documents/project/hearlink-guidam-crm
+cd "$PROJECT_DIR"
 
 echo "[1/3] Prisma 스키마 검증..."
 npx prisma validate

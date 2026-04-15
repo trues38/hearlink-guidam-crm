@@ -6,12 +6,13 @@
 import os
 import json
 from datetime import datetime
+from pathlib import Path
 
 
 def main():
     print("=== 70_generate_qc_pack.py - QA 리포트 생성 ===")
 
-    project_dir = "/Users/js/Documents/project/hearlink-guidam-crm"
+    project_dir = Path(__file__).resolve().parents[1]
     output_dir = f"{project_dir}/qc_packs"
     os.makedirs(output_dir, exist_ok=True)
 

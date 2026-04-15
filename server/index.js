@@ -679,6 +679,18 @@ app.post('/api/devices', async (req, res) => {
   res.status(201).json(device);
 });
 
+// Device Serial - MUST be before /:id to avoid route conflict
+app.get('/api/devices/serial/:serial', async (req, res) => {
+  const centerId = req.query.centerId;
+  if (!centerId) return res.status(400).json({ error: 'centerId is required' });
+  const serial = await prisma.deviceSerialNumber.findUnique({
+    where: { centerId_serialNumber: { centerId, serialNumber: req.params.serial } },
+    include: { device: true }
+  });
+  if (!serial) return res.status(404).json({ error: 'Serial not found' });
+  res.json(serial);
+});
+
 app.get('/api/devices/:id', async (req, res) => {
   const device = await prisma.device.findUnique({
     where: { id: req.params.id },
@@ -703,15 +715,6 @@ app.post('/api/devices/:id/serials', async (req, res) => {
     data: { deviceId: req.params.id, centerId, serialNumber }
   });
   res.status(201).json(serial);
-});
-
-app.get('/api/devices/serial/:serial', async (req, res) => {
-  const serial = await prisma.deviceSerialNumber.findUnique({
-    where: { centerId_serialNumber: { centerId: req.query.centerId || '', serialNumber: req.params.serial } },
-    include: { device: true }
-  });
-  if (!serial) return res.status(404).json({ error: 'Serial not found' });
-  res.json(serial);
 });
 
 // CustomerDevice (장비-고객 연결 라이프사이클)
@@ -796,6 +799,30 @@ app.put('/api/fittings/:id', async (req, res) => {
 // Phase 3: Conformity/적합성 심사
 // ============================================
 
+// Center-level conformity list (avoids N+1)
+app.get('/api/conformity', async (req, res) => {
+  const { centerId, status, skip = 0, limit = 100 } = req.query;
+  const where = {};
+  if (status) where.status = status;
+  // Validate UUID format before filtering by centerId to avoid Prisma errors
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (centerId && uuidRegex.test(centerId)) {
+    where.customer = { centerId };
+  }
+  
+  const [items, total] = await Promise.all([
+    prisma.conformityRecord.findMany({
+      where,
+      skip: parseInt(skip),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' },
+      include: { customer: { select: { id: true, name: true, contactNumber: true } } }
+    }),
+    prisma.conformityRecord.count({ where })
+  ]);
+  res.json({ items, total, skip: parseInt(skip), limit: parseInt(limit) });
+});
+
 app.get('/api/conformity/:customerId', async (req, res) => {
   const records = await prisma.conformityRecord.findMany({
     where: { customerId: req.params.customerId },
@@ -862,10 +889,15 @@ app.get('/api/tasks', async (req, res) => {
   if (centerId) where.centerId = centerId;
   if (customerId) where.customerId = customerId;
   if (assigneeId) where.assigneeId = assigneeId;
-  // Note: status filtering would need to be in data JSON field
   
   const [items, total] = await Promise.all([
-    prisma.task.findMany({ where, skip: parseInt(skip), take: parseInt(limit), orderBy: { createdAt: 'desc' } }),
+    prisma.task.findMany({
+      where,
+      skip: parseInt(skip),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' },
+      include: { customer: { select: { id: true, name: true, contactNumber: true } } }
+    }),
     prisma.task.count({ where })
   ]);
   res.json({ items, total });
@@ -929,7 +961,7 @@ app.get('/api/customers/:customerId/events', async (req, res) => {
       take: parseInt(limit),
       orderBy: { eventAt: 'desc' }
     }),
-    prisma.customerEvent.count({ customerId: req.params.customerId })
+    prisma.customerEvent.count({ where: { customerId: req.params.customerId } })
   ]);
   res.json({ items, total });
 });
@@ -1012,6 +1044,19 @@ app.put('/api/inventory/accessories/:id', async (req, res) => {
     data: req.body
   });
   res.json(item);
+});
+
+app.post('/api/inventory/accessories/:id/adjust', async (req, res) => {
+  const { delta, reason } = req.body;
+  const accessory = await prisma.accessory.findUnique({ where: { id: req.params.id } });
+  if (!accessory) return res.status(404).json({ error: 'Accessory not found' });
+  
+  const updated = await prisma.accessory.update({
+    where: { id: req.params.id },
+    data: { quantity: { increment: delta } }
+  });
+  
+  res.json({ item: updated, reason, delta });
 });
 
 // ============================================
@@ -1103,7 +1148,7 @@ app.get('/api/stats/dashboard', async (req, res) => {
 });
 
 // Health check endpoint for monitoring
-app.get('/health', (req, res) => {
+app.get('/healthz', (req, res) => {
   res.json({ 
     status: 'healthy', 
     service: 'hearlink-crm-api',

@@ -2,8 +2,9 @@
 
 echo "=== 90_release_prod.sh - 운영 배포 ==="
 
-PROJECT_DIR="/Users/js/Documents/project/hearlink-guidam-crm"
-cd $PROJECT_DIR
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_DIR"
 
 echo "[주의] 이 스크립트는 운영 환경에 배포합니다."
 echo "        계속 진행하시겠습니까? (y/N)"
