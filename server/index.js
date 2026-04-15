@@ -422,7 +422,8 @@ app.get('/api/customers/:id', async (req, res) => {
       devices: true,
       workLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
       documents: { orderBy: { createdAt: 'desc' }, take: 10 },
-      notifications: { orderBy: { createdAt: 'desc' }, take: 10 }
+      notifications: { orderBy: { createdAt: 'desc' }, take: 10 },
+      fittingLogs: { orderBy: { createdAt: 'desc' }, take: 20 }
     }
   });
   if (!customer) return res.status(404).json({ error: 'Customer not found' });
@@ -653,7 +654,464 @@ app.delete('/api/schedules/:id', async (req, res) => {
   res.status(204).send();
 });
 
-const PORT = process.env.PORT || 3001;
+// ============================================
+// Phase 3: Device/장비 Management
+// ============================================
+
+// Device CRUD (center-level inventory)
+app.get('/api/devices', async (req, res) => {
+  const { centerId, brand, type, ear, hasSerial } = req.query;
+  const where = {};
+  if (centerId) where.centerId = centerId;
+  if (brand) where.brand = brand;
+  if (type) where.type = type;
+  if (ear) where.ear = ear;
+
+  const items = await prisma.device.findMany({ where, include: { serialNumbers: true } });
+  res.json({ items });
+});
+
+app.post('/api/devices', async (req, res) => {
+  const { centerId, brand, model, type, ear, color, heardotcom, used, governmentSupport } = req.body;
+  const device = await prisma.device.create({
+    data: { centerId, brand, model, type, ear, color, heardotcom, used, governmentSupport }
+  });
+  res.status(201).json(device);
+});
+
+app.get('/api/devices/:id', async (req, res) => {
+  const device = await prisma.device.findUnique({
+    where: { id: req.params.id },
+    include: { serialNumbers: true }
+  });
+  if (!device) return res.status(404).json({ error: 'Device not found' });
+  res.json(device);
+});
+
+app.put('/api/devices/:id', async (req, res) => {
+  const device = await prisma.device.update({
+    where: { id: req.params.id },
+    data: req.body
+  });
+  res.json(device);
+});
+
+// Device Serial Numbers
+app.post('/api/devices/:id/serials', async (req, res) => {
+  const { centerId, serialNumber } = req.body;
+  const serial = await prisma.deviceSerialNumber.create({
+    data: { deviceId: req.params.id, centerId, serialNumber }
+  });
+  res.status(201).json(serial);
+});
+
+app.get('/api/devices/serial/:serial', async (req, res) => {
+  const serial = await prisma.deviceSerialNumber.findUnique({
+    where: { centerId_serialNumber: { centerId: req.query.centerId || '', serialNumber: req.params.serial } },
+    include: { device: true }
+  });
+  if (!serial) return res.status(404).json({ error: 'Serial not found' });
+  res.json(serial);
+});
+
+// CustomerDevice (장비-고객 연결 라이프사이클)
+app.get('/api/customer-devices', async (req, res) => {
+  const { customerId } = req.query;
+  const where = {};
+  if (customerId) where.customerId = customerId;
+  const items = await prisma.customerDevice.findMany({ where, orderBy: { createdAt: 'desc' } });
+  res.json({ items });
+});
+
+app.post('/api/customer-devices', async (req, res) => {
+  const { customerId, brand, model, type, color, ear, receiver, serialNumber, memo } = req.body;
+  const device = await prisma.customerDevice.create({
+    data: { customerId, brand, model, type, color, ear, receiver, serialNumber, memo }
+  });
+  res.status(201).json(device);
+});
+
+app.put('/api/customer-devices/:id', async (req, res) => {
+  const device = await prisma.customerDevice.update({
+    where: { id: req.params.id },
+    data: req.body
+  });
+  res.json(device);
+});
+
+app.delete('/api/customer-devices/:id', async (req, res) => {
+  await prisma.customerDevice.delete({ where: { id: req.params.id } });
+  res.status(204).send();
+});
+
+// ============================================
+// Phase 3: Fitting/피팅 Management
+// ============================================
+
+app.get('/api/fittings', async (req, res) => {
+  const { customerId, skip = 0, limit = 20 } = req.query;
+  const where = {};
+  if (customerId) where.customerId = customerId;
+
+  const [items, total] = await Promise.all([
+    prisma.fittingLog.findMany({ where, skip: parseInt(skip), take: parseInt(limit), orderBy: { createdAt: 'desc' } }),
+    prisma.fittingLog.count({ where })
+  ]);
+  res.json({ items, total });
+});
+
+app.post('/api/fittings', async (req, res) => {
+  const { customerId, brand, model, ear, content, createdBy } = req.body;
+  const fitting = await prisma.fittingLog.create({
+    data: { customerId, brand, model, ear, content, createdBy }
+  });
+  
+  // Create customer event
+  await prisma.customerEvent.create({
+    data: {
+      customerId,
+      eventType: 'FITTING_CREATED',
+      payload: JSON.stringify({ fittingId: fitting.id, ear }),
+    }
+  });
+  
+  res.status(201).json(fitting);
+});
+
+app.get('/api/fittings/:id', async (req, res) => {
+  const fitting = await prisma.fittingLog.findUnique({ where: { id: req.params.id } });
+  if (!fitting) return res.status(404).json({ error: 'Fitting not found' });
+  res.json(fitting);
+});
+
+app.put('/api/fittings/:id', async (req, res) => {
+  const fitting = await prisma.fittingLog.update({
+    where: { id: req.params.id },
+    data: req.body
+  });
+  res.json(fitting);
+});
+
+// ============================================
+// Phase 3: Conformity/적합성 심사
+// ============================================
+
+app.get('/api/conformity/:customerId', async (req, res) => {
+  const records = await prisma.conformityRecord.findMany({
+    where: { customerId: req.params.customerId },
+    orderBy: { round: 'desc' }
+  });
+  res.json({ items: records });
+});
+
+app.post('/api/conformity/:customerId', async (req, res) => {
+  const { supportType, recipientType, status, missingDocs, notes, reviewedBy } = req.body;
+  
+  // Get max round
+  const last = await prisma.conformityRecord.findFirst({
+    where: { customerId: req.params.customerId },
+    orderBy: { round: 'desc' }
+  });
+  const newRound = (last?.round || 0) + 1;
+  
+  const record = await prisma.conformityRecord.create({
+    data: {
+      customerId: req.params.customerId,
+      round: newRound,
+      supportType,
+      recipientType,
+      status: status || 'PENDING',
+      missingDocs: missingDocs ? JSON.stringify(missingDocs) : '[]',
+      notes,
+      reviewedBy
+    }
+  });
+  
+  res.status(201).json(record);
+});
+
+app.put('/api/conformity/:customerId/status', async (req, res) => {
+  const { round, status, notes, missingDocs } = req.body;
+  
+  const record = await prisma.conformityRecord.findFirst({
+    where: { customerId: req.params.customerId, round: parseInt(round) }
+  });
+  
+  if (!record) return res.status(404).json({ error: 'Record not found' });
+  
+  const updated = await prisma.conformityRecord.update({
+    where: { id: record.id },
+    data: {
+      status,
+      notes,
+      missingDocs: missingDocs ? JSON.stringify(missingDocs) : undefined,
+      reviewedAt: new Date()
+    }
+  });
+  
+  res.json(updated);
+});
+
+// ============================================
+// Phase 3: Tasks + Rule Engine
+// ============================================
+
+app.get('/api/tasks', async (req, res) => {
+  const { centerId, customerId, status, assigneeId, skip = 0, limit = 50 } = req.query;
+  const where = {};
+  if (centerId) where.centerId = centerId;
+  if (customerId) where.customerId = customerId;
+  if (assigneeId) where.assigneeId = assigneeId;
+  // Note: status filtering would need to be in data JSON field
+  
+  const [items, total] = await Promise.all([
+    prisma.task.findMany({ where, skip: parseInt(skip), take: parseInt(limit), orderBy: { createdAt: 'desc' } }),
+    prisma.task.count({ where })
+  ]);
+  res.json({ items, total });
+});
+
+app.post('/api/tasks', async (req, res) => {
+  const { centerId, customerId, type, memo, data, assigneeId, dueAt, priority } = req.body;
+  const task = await prisma.task.create({
+    data: {
+      centerId: centerId || 'default-center-id',
+      customerId,
+      type,
+      memo,
+      data: data || {},
+      assigneeId,
+      dueAt: dueAt ? new Date(dueAt) : null,
+      orderedAt: new Date()
+    }
+  });
+  
+  // Create customer event
+  if (customerId) {
+    await prisma.customerEvent.create({
+      data: {
+        customerId,
+        eventType: 'TASK_CREATED',
+        payload: JSON.stringify({ taskId: task.id, type })
+      }
+    });
+  }
+  
+  res.status(201).json(task);
+});
+
+app.put('/api/tasks/:id', async (req, res) => {
+  const task = await prisma.task.update({
+    where: { id: req.params.id },
+    data: req.body
+  });
+  res.json(task);
+});
+
+app.put('/api/tasks/:id/complete', async (req, res) => {
+  const task = await prisma.task.update({
+    where: { id: req.params.id },
+    data: { arrivedAt: new Date() }
+  });
+  res.json(task);
+});
+
+// ============================================
+// Phase 3: Customer Events (Event Sourcing)
+// ============================================
+
+app.get('/api/customers/:customerId/events', async (req, res) => {
+  const { skip = 0, limit = 50 } = req.query;
+  const [items, total] = await Promise.all([
+    prisma.customerEvent.findMany({
+      where: { customerId: req.params.customerId },
+      skip: parseInt(skip),
+      take: parseInt(limit),
+      orderBy: { eventAt: 'desc' }
+    }),
+    prisma.customerEvent.count({ customerId: req.params.customerId })
+  ]);
+  res.json({ items, total });
+});
+
+app.post('/api/customers/:customerId/events', async (req, res) => {
+  const { eventType, payload, createdBy } = req.body;
+  const event = await prisma.customerEvent.create({
+    data: {
+      customerId: req.params.customerId,
+      eventType,
+      payload: payload ? JSON.stringify(payload) : null,
+      createdBy
+    }
+  });
+  res.status(201).json(event);
+});
+
+// ============================================
+// Phase 3: Inventory (Battery/Accessory)
+// ============================================
+
+app.get('/api/inventory/batteries', async (req, res) => {
+  const { centerId } = req.query;
+  const items = await prisma.battery.findMany({
+    where: centerId ? { centerId } : {},
+    orderBy: { model: 'asc' }
+  });
+  res.json({ items });
+});
+
+app.post('/api/inventory/batteries', async (req, res) => {
+  const { centerId, model, brand, quantity, lowStockAt } = req.body;
+  const item = await prisma.battery.create({
+    data: { centerId, model, brand, quantity, lowStockAt: lowStockAt || 5 }
+  });
+  res.status(201).json(item);
+});
+
+app.put('/api/inventory/batteries/:id', async (req, res) => {
+  const item = await prisma.battery.update({
+    where: { id: req.params.id },
+    data: req.body
+  });
+  res.json(item);
+});
+
+app.post('/api/inventory/batteries/:id/adjust', async (req, res) => {
+  const { delta, reason } = req.body;
+  const battery = await prisma.battery.findUnique({ where: { id: req.params.id } });
+  if (!battery) return res.status(404).json({ error: 'Battery not found' });
+  
+  const updated = await prisma.battery.update({
+    where: { id: req.params.id },
+    data: { quantity: { increment: delta } }
+  });
+  
+  res.json({ item: updated, reason, delta });
+});
+
+app.get('/api/inventory/accessories', async (req, res) => {
+  const { centerId } = req.query;
+  const items = await prisma.accessory.findMany({
+    where: centerId ? { centerId } : {},
+    orderBy: { model: 'asc' }
+  });
+  res.json({ items });
+});
+
+app.post('/api/inventory/accessories', async (req, res) => {
+  const { centerId, model, brand, type, quantity, lowStockAt } = req.body;
+  const item = await prisma.accessory.create({
+    data: { centerId, model, brand, type, quantity, lowStockAt: lowStockAt || 5 }
+  });
+  res.status(201).json(item);
+});
+
+app.put('/api/inventory/accessories/:id', async (req, res) => {
+  const item = await prisma.accessory.update({
+    where: { id: req.params.id },
+    data: req.body
+  });
+  res.json(item);
+});
+
+// ============================================
+// Phase 3: Task Rules (Rule Engine Seed)
+// ============================================
+
+app.get('/api/task-rules', async (req, res) => {
+  const rules = await prisma.taskRule.findMany({ orderBy: { priority: 'asc' } });
+  res.json({ items: rules });
+});
+
+app.post('/api/task-rules', async (req, res) => {
+  const { code, name, enabled, priority, condition, actionType, actionTitle, dueDays } = req.body;
+  const rule = await prisma.taskRule.create({
+    data: { code, name, enabled: enabled !== false, priority: priority || 0, condition: JSON.stringify(condition), actionType, actionTitle, dueDays }
+  });
+  res.status(201).json(rule);
+});
+
+// ============================================
+// Statistics/Dashboard APIs
+// ============================================
+
+app.get('/api/stats/dashboard', async (req, res) => {
+  const { centerId, startDate, endDate } = req.query;
+  
+  // Get date range
+  const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const end = endDate ? new Date(endDate) : new Date();
+  
+  // Customers count
+  const totalCustomers = await prisma.customer.count({ where: centerId ? { centerId } : {} });
+  
+  // Sales stats
+  const sales = await prisma.sale.findMany({
+    where: centerId ? { centerId } : {},
+    include: { customer: true }
+  });
+  
+  const totalRevenue = sales.filter(s => s.status === 'PAID').reduce((sum, s) => sum + s.paidAmount, 0);
+  const unpaidCount = sales.filter(s => s.status === 'UNPAID').length;
+  const unpaidAmount = sales.filter(s => s.status === 'UNPAID').reduce((sum, s) => sum + (s.totalAmount - s.paidAmount), 0);
+  
+  // Schedules this month
+  const schedulesThisMonth = await prisma.schedule.count({
+    where: {
+      centerId: centerId || undefined,
+      scheduledAt: { gte: start, lte: end }
+    }
+  });
+  
+  // Consultation count
+  const consultationsThisMonth = await prisma.consultation.count({
+    where: { consultedAt: { gte: start, lte: end } }
+  });
+  
+  // Conformity stats
+  const conformityStats = await prisma.conformityRecord.groupBy({
+    by: ['status'],
+    _count: true
+  });
+  
+  // Customer stage distribution (based on computed logic)
+  const customers = await prisma.customer.findMany({
+    where: centerId ? { centerId } : {},
+    include: {
+      consultations: { take: 1, orderBy: { consultedAt: 'desc' } },
+      audiometries: { take: 1, orderBy: { createdAt: 'desc' } },
+      sales: { take: 1, orderBy: { createdAt: 'desc' } }
+    }
+  });
+  
+  const stageDistribution = {
+    NEW: customers.filter(c => c.consultations.length === 0).length,
+    CONSULTED: customers.filter(c => c.consultations.length > 0 && c.audiometries.length === 0).length,
+    TESTED: customers.filter(c => c.audiometries.length > 0 && c.sales.length === 0).length,
+    PURCHASED: customers.filter(c => c.sales.some(s => s.status === 'PAID')).length,
+    UNPAID: customers.filter(c => c.sales.some(s => s.status === 'UNPAID')).length
+  };
+  
+  res.json({
+    totalCustomers,
+    revenue: { total: totalRevenue, unpaidCount, unpaidAmount },
+    schedulesThisMonth,
+    consultationsThisMonth,
+    conformityStats,
+    stageDistribution
+  });
+});
+
+// Health check endpoint for monitoring
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    service: 'hearlink-crm-api',
+    timestamp: new Date().toISOString()
+  });
+});
+
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
   console.log(`Hearlink CRM API running on port ${PORT}`);
 });
