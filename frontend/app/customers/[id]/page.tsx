@@ -374,13 +374,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     placeholder="상담 내용" 
                     value={consultationForm.content} 
                     onChange={(e) => setConsultationForm({ ...consultationForm, content: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none" 
+                    className="input resize-none" 
                     rows={3}
                   />
                   <select 
                     value={consultationForm.method} 
                     onChange={(e) => setConsultationForm({ ...consultationForm, method: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   >
                     <option value="CENTER_VISIT">센터방문</option>
                     <option value="HOME_VISIT">재택방문</option>
@@ -390,7 +390,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     type="datetime-local" 
                     value={consultationForm.consultedAt} 
                     onChange={(e) => setConsultationForm({ ...consultationForm, consultedAt: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                 </div>
                 <button 
@@ -434,7 +434,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   <select 
                     value={audiometryForm.lossType} 
                     onChange={(e) => setAudiometryForm({ ...audiometryForm, lossType: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 flex-1"
+                    className="input flex-1"
                   >
                     <option value="">선택하세요</option>
                     <option value="CONDUCTIVE">전음성</option>
@@ -482,20 +482,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     placeholder="일정 제목" 
                     value={scheduleForm.title} 
                     onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                   <input 
                     type="datetime-local" 
                     value={scheduleForm.scheduledAt} 
                     onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledAt: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                   <input 
                     type="text" 
                     placeholder="설명 (선택)" 
                     value={scheduleForm.description} 
                     onChange={(e) => setScheduleForm({ ...scheduleForm, description: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                 </div>
                 <button 
@@ -542,19 +542,19 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     placeholder="총액 (원)" 
                     value={paymentForm.totalAmount} 
                     onChange={(e) => setPaymentForm({ ...paymentForm, totalAmount: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                   <input 
                     type="number" 
                     placeholder="입금액 (원)" 
                     value={paymentForm.paidAmount} 
                     onChange={(e) => setPaymentForm({ ...paymentForm, paidAmount: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                   <select 
                     value={paymentForm.status} 
                     onChange={(e) => setPaymentForm({ ...paymentForm, status: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   >
                     <option value="UNPAID">미결제</option>
                     <option value="PAID">결제완료</option>
@@ -565,7 +565,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     placeholder="메모 (선택)" 
                     value={paymentForm.memo} 
                     onChange={(e) => setPaymentForm({ ...paymentForm, memo: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                 </div>
                 <button 
@@ -607,23 +607,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
           {/* DOCUMENTS TAB */}
           {activeTab === "documents" && (
-            <div className="space-y-3">
-              {customer.documents?.map((d) => (
-                <div key={d.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">{d.type}</span>
-                      <p className="font-medium mt-2">{d.purpose} - {d.insuranceType}</p>
-                      <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">키: {d.key}</p>
-                      <p className="text-xs text-gray-400 mt-1">{new Date(d.createdAt).toLocaleDateString("ko-KR")}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {(!customer.documents || customer.documents.length === 0) && (
-                <div className="text-center py-12 text-gray-400">문서 기록이 없습니다</div>
-              )}
-            </div>
+            <DocumentTab customer={customer} centerId={centerId} onUpdate={fetchCustomer} />
           )}
 
           {/* WORKLOGS TAB */}
@@ -635,7 +619,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   <select 
                     value={workLogForm.type} 
                     onChange={(e) => setWorkLogForm({ ...workLogForm, type: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   >
                     <option value="CUSTOMER_VISIT">고객방문</option>
                     <option value="PHONE_CALL">전화상담</option>
@@ -651,7 +635,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     placeholder="활동 내용" 
                     value={workLogForm.content} 
                     onChange={(e) => setWorkLogForm({ ...workLogForm, content: e.target.value })} 
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="input"
                   />
                 </div>
                 <button 
@@ -770,26 +754,289 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 dark:text-slate-300 text-2xl">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">이름</label><input type="text" value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">연락처</label><input type="text" value={editForm.contactNumber || ""} onChange={(e) => setEditForm({ ...editForm, contactNumber: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">이메일</label><input type="email" value={editForm.email || ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">생년월일</label><input type="date" value={editForm.birthDate ? String(editForm.birthDate).split("T")[0] : ""} onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">성별</label><select value={editForm.gender || ""} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="MALE">남성</option><option value="FEMALE">여성</option></select></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">분류</label><select value={editForm.classification || ""} onChange={(e) => setEditForm({ ...editForm, classification: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="SELF">자가</option><option value="OTHER">타기관</option><option value="HEARDOTCOM">히어닷컴</option></select></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">정부지원</label><select value={editForm.governmentSupportType || ""} onChange={(e) => setEditForm({ ...editForm, governmentSupportType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="DISABILITY_GRADE_HOLDER">장애등급소지자</option><option value="POTENTIAL_DISABILITY">장애가망</option><option value="INDUSTRIAL_ACCIDENT">산업재해</option><option value="GENERAL">일반</option></select></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">수급구분</label><select value={editForm.recipientType || ""} onChange={(e) => setEditForm({ ...editForm, recipientType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="RECIPIENT">수급자</option><option value="NEAR_POVERTY">차상위</option><option value="GENERAL">일반</option></select></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">인증유형</label><select value={editForm.processType || ""} onChange={(e) => setEditForm({ ...editForm, processType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="PRE_CERTIFICATION">사전인증</option><option value="POST_CERTIFICATION">사후인증</option></select></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">청력장애유형</label><select value={editForm.lossType || ""} onChange={(e) => setEditForm({ ...editForm, lossType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">선택</option><option value="CONDUCTIVE">전음성</option><option value="SENSORINEURAL">감각신경성</option><option value="SUDDEN">돌발성</option><option value="NOISE_INDUCED">소음성</option></select></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">유입경로</label><input type="text" value={editForm.referralSource || ""} onChange={(e) => setEditForm({ ...editForm, referralSource: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">병원</label><input type="text" value={editForm.hospitalName || ""} onChange={(e) => setEditForm({ ...editForm, hospitalName: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div className="col-span-2"><label className="text-sm text-gray-500 dark:text-slate-400">주소</label><input type="text" value={editForm.addressLine1 || ""} onChange={(e) => setEditForm({ ...editForm, addressLine1: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="주소"/></div>
-              <div><label className="text-sm text-gray-500 dark:text-slate-400">우편번호</label><input type="text" value={editForm.postalCode || ""} onChange={(e) => setEditForm({ ...editForm, postalCode: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
-              <div className="col-span-2"><label className="text-sm text-gray-500 dark:text-slate-400">메모</label><textarea value={editForm.memo || ""} onChange={(e) => setEditForm({ ...editForm, memo: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows={3} /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">이름</label><input type="text" value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full input" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">연락처</label><input type="text" value={editForm.contactNumber || ""} onChange={(e) => setEditForm({ ...editForm, contactNumber: e.target.value })} className="w-full input" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">이메일</label><input type="email" value={editForm.email || ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full input" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">생년월일</label><input type="date" value={editForm.birthDate ? String(editForm.birthDate).split("T")[0] : ""} onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })} className="w-full input" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">성별</label><select value={editForm.gender || ""} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })} className="w-full input"><option value="">선택</option><option value="MALE">남성</option><option value="FEMALE">여성</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">분류</label><select value={editForm.classification || ""} onChange={(e) => setEditForm({ ...editForm, classification: e.target.value })} className="w-full input"><option value="">선택</option><option value="SELF">자가</option><option value="OTHER">타기관</option><option value="HEARDOTCOM">히어닷컴</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">정부지원</label><select value={editForm.governmentSupportType || ""} onChange={(e) => setEditForm({ ...editForm, governmentSupportType: e.target.value })} className="w-full input"><option value="">선택</option><option value="DISABILITY_GRADE_HOLDER">장애등급소지자</option><option value="POTENTIAL_DISABILITY">장애가망</option><option value="INDUSTRIAL_ACCIDENT">산업재해</option><option value="GENERAL">일반</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">수급구분</label><select value={editForm.recipientType || ""} onChange={(e) => setEditForm({ ...editForm, recipientType: e.target.value })} className="w-full input"><option value="">선택</option><option value="RECIPIENT">수급자</option><option value="NEAR_POVERTY">차상위</option><option value="GENERAL">일반</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">인증유형</label><select value={editForm.processType || ""} onChange={(e) => setEditForm({ ...editForm, processType: e.target.value })} className="w-full input"><option value="">선택</option><option value="PRE_CERTIFICATION">사전인증</option><option value="POST_CERTIFICATION">사후인증</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">청력장애유형</label><select value={editForm.lossType || ""} onChange={(e) => setEditForm({ ...editForm, lossType: e.target.value })} className="w-full input"><option value="">선택</option><option value="CONDUCTIVE">전음성</option><option value="SENSORINEURAL">감각신경성</option><option value="SUDDEN">돌발성</option><option value="NOISE_INDUCED">소음성</option></select></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">유입경로</label><input type="text" value={editForm.referralSource || ""} onChange={(e) => setEditForm({ ...editForm, referralSource: e.target.value })} className="w-full input" /></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">병원</label><input type="text" value={editForm.hospitalName || ""} onChange={(e) => setEditForm({ ...editForm, hospitalName: e.target.value })} className="w-full input" /></div>
+              <div className="col-span-2"><label className="text-sm text-gray-500 dark:text-slate-400">주소</label><input type="text" value={editForm.addressLine1 || ""} onChange={(e) => setEditForm({ ...editForm, addressLine1: e.target.value })} className="w-full input" placeholder="주소"/></div>
+              <div><label className="text-sm text-gray-500 dark:text-slate-400">우편번호</label><input type="text" value={editForm.postalCode || ""} onChange={(e) => setEditForm({ ...editForm, postalCode: e.target.value })} className="w-full input" /></div>
+              <div className="col-span-2"><label className="text-sm text-gray-500 dark:text-slate-400">메모</label><textarea value={editForm.memo || ""} onChange={(e) => setEditForm({ ...editForm, memo: e.target.value })} className="w-full input" rows={3} /></div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">취소</button>
               <button onClick={handleCustomerUpdate} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">저장</button>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// Document Tab Component - v1.0 Document Automation
+// ============================================
+function DocumentTab({ customer, centerId, onUpdate }: { customer: any; centerId: string; onUpdate: () => void }) {
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [governmentTrack, setGovernmentTrack] = useState<any>(null);
+  const [nextActions, setNextActions] = useState<any>(null);
+
+  const API_BASE = "http://localhost:3002";
+
+  useEffect(() => {
+    fetchTemplates();
+    fetchDrafts();
+    fetchGovernmentInfo();
+  }, [customer.id]);
+
+  const fetchTemplates = async () => {
+    const res = await fetch(`${API_BASE}/api/document-templates`);
+    const data = await res.json();
+    setTemplates(data.items || []);
+  };
+
+  const fetchDrafts = async () => {
+    const res = await fetch(`${API_BASE}/api/document-drafts?customerId=${customer.id}`);
+    const data = await res.json();
+    setDrafts(data.items || []);
+  };
+
+  const fetchGovernmentInfo = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/customers/${customer.id}/next-actions`);
+      if (res.ok) {
+        const data = await res.json();
+        setGovernmentTrack(data.governmentTrack);
+        setNextActions(data);
+      }
+    } catch {}
+  };
+
+  const createDraft = async () => {
+    if (!selectedTemplate) return;
+    setLoading(true);
+    try {
+      await fetch(`${API_BASE}/api/document-drafts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          templateCode: selectedTemplate,
+          customerId: customer.id,
+          centerId: centerId || "default-center-id"
+        })
+      });
+      fetchDrafts();
+      onUpdate();
+    } catch (err) {
+      alert("초안 생성 실패");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitDraft = async (draftId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/document-drafts/${draftId}/submit`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`제출 불가: ${err.error}\n누락필드: ${err.missingCritical?.join(", ")}`);
+        return;
+      }
+      fetchDrafts();
+      onUpdate();
+      alert("제출 완료!");
+    } catch {
+      alert("제출 실패");
+    }
+  };
+
+  const getFieldStateIcon = (state: string) => {
+    switch (state) {
+      case "AUTO": return "✅";
+      case "SENSITIVE": return "🔐";
+      case "MANUAL": return "✍️";
+      default: return "❓";
+    }
+  };
+
+  const getFieldStateColor = (state: string, filled: boolean) => {
+    if (!filled) return "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
+    if (state === "SENSITIVE") return "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800";
+    return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800";
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Government Track Banner */}
+      {governmentTrack && (
+        <div className={`rounded-xl p-4 border ${
+          governmentTrack.track === "LOCAL" 
+            ? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800"
+            : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{governmentTrack.track === "LOCAL" ? "🏛️" : "📠"}</span>
+              <div>
+                <p className="font-semibold">{governmentTrack.description}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">급여율: {governmentTrack.coverage}</p>
+              </div>
+            </div>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              governmentTrack.track === "LOCAL" 
+                ? "bg-purple-100 text-purple-700"
+                : "bg-blue-100 text-blue-700"
+            }`}>
+              {governmentTrack.submissionMethod}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Create New Draft */}
+      <div className="bg-gray-50 dark:bg-slate-900 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
+        <h3 className="font-semibold mb-3">📄 새 문서 초안 생성</h3>
+        <div className="flex gap-4 items-center">
+          <select
+            value={selectedTemplate}
+            onChange={(e) => setSelectedTemplate(e.target.value)}
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800"
+          >
+            <option value="">문서 유형 선택...</option>
+            {templates.map((t) => (
+              <option key={t.code} value={t.code}>
+                {t.name} ({t.insuranceType === "LOCAL_MEDICAL" ? "지자체" : "일반"})
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={createDraft}
+            disabled={!selectedTemplate || loading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
+          >
+            {loading ? "생성 중..." : "초안 생성"}
+          </button>
+        </div>
+      </div>
+
+      {/* Drafts List */}
+      <div className="space-y-4">
+        <h3 className="font-semibold text-lg">📋 문서 초안 ({drafts.length})</h3>
+        {drafts.length === 0 ? (
+          <div className="text-center py-12 text-gray-400 bg-gray-50 dark:bg-slate-900 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
+            생성된 초안이 없습니다
+          </div>
+        ) : (
+          drafts.map((draft) => {
+            const template = templates.find((t) => t.code === draft.templateId) || {};
+            const fieldStates = typeof draft.fieldStates === "string" ? JSON.parse(draft.fieldStates) : draft.fieldStates || {};
+            const autoFilled = typeof draft.autoFilled === "string" ? JSON.parse(draft.autoFilled) : draft.autoFilled || {};
+            const missingCritical = typeof draft.missingCritical === "string" ? JSON.parse(draft.missingCritical) : draft.missingCritical || [];
+            const missingFields = typeof draft.missingFields === "string" ? JSON.parse(draft.missingFields) : draft.missingFields || [];
+
+            return (
+              <div key={draft.id} className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                {/* Draft Header */}
+                <div className="bg-gray-50 dark:bg-slate-800 p-4 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">{template.name || draft.templateId}</h4>
+                    <p className="text-sm text-gray-500">
+                      {draft.status === "PENDING" ? "⏳ 작성중" :
+                       draft.status === "READY_TO_SUBMIT" ? "✅ 제출가능" :
+                       draft.status === "SUBMITTED" ? "📤 제출완료" :
+                       draft.status === "FAILED" ? "❌ 실패" : draft.status}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {draft.canAutoDraft && draft.status !== "SUBMITTED" && (
+                      <button
+                        onClick={() => submitDraft(draft.id)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                      >
+                        제출
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Field States */}
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {Object.entries(fieldStates).map(([field, state]: [string, any]) => {
+                      const fieldDef = template.fields?.[field];
+                      const filled = !!autoFilled[field];
+                      return (
+                        <div
+                          key={field}
+                          className={`p-3 rounded-lg border ${getFieldStateColor(state, filled)}`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg">{getFieldStateIcon(state)}</span>
+                            <span className="text-sm font-medium">{fieldDef?.label || field}</span>
+                            {!filled && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">누락</span>}
+                          </div>
+                          <p className="text-xs text-gray-500 truncate">
+                            {state === "AUTO" && filled ? `${getFieldStateIcon(state)} ${autoFilled[field]}` :
+                             state === "SENSITIVE" ? "🔐 민감정보" :
+                             "✍️ 수동 입력 필요"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Missing Critical Fields Alert */}
+                  {missingCritical.length > 0 && (
+                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">
+                        ⚠️ 필수 누락 필드 ({missingCritical.length}개)
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {missingCritical.map((f: string) => (
+                          <span key={f} className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                            {template.fields?.[f]?.label || f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Next Actions from Government Calculator */}
+      {nextActions?.actions?.length > 0 && (
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg mb-3">📌 다음 액션 ({nextActions.position?.position})</h3>
+          <div className="space-y-2">
+            {nextActions.actions.map((action: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                  {action.priority}
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium">{action.title}</p>
+                  <p className="text-sm text-gray-500">{action.description}</p>
+                </div>
+                {action.dueDays > 0 && (
+                  <span className="text-xs text-gray-400">D-{action.dueDays}</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

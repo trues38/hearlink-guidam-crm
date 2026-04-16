@@ -311,8 +311,8 @@ export default function CustomersPage() {
               >
                 취소
               </button>
-              <button 
-                onClick={handleSubmit}
+              <button
+                type="submit"
                 disabled={submitting}
                 className="group relative px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 disabled:opacity-50 transition-all overflow-hidden flex items-center justify-center min-w-[100px]"
               >    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300 group-hover:scale-105"></div>

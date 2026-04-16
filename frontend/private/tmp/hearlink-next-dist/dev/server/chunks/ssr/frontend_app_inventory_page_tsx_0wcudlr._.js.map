@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///Users/js/Documents/project/hearlink-guidam-crm/frontend/app/inventory/page.tsx"],"sourcesContent":["'use client'\n\nimport { useEffect } from 'react'\nimport { useRouter } from 'next/navigation'\n\nexport default function InventoryPage() {\n  const router = useRouter()\n  \n  useEffect(() => {\n    router.replace('/inventory/batteries')\n  }, [router])\n  \n  return (\n    <div className=\"flex items-center justify-center py-20\">\n      <div className=\"text-slate-400\">재고 관리 페이지로 이동 중...</div>\n    </div>\n  )\n}"],"names":["InventoryPage","router","replace","className"],"mappings":";;;;;AAEA;AACA;AAHA;;;;AAKe,SAASA;IACtB,MAAMC,SAAS,IAAA,2JAAS;IAExB,IAAA,8NAAS,EAAC;QACRA,OAAOC,OAAO,CAAC;IACjB,GAAG;QAACD;KAAO;IAEX,qBACE,0PAAC;QAAIE,WAAU;kBACb,cAAA,0PAAC;YAAIA,WAAU;sBAAiB;;;;;;;;;;;AAGtC"}}]
-}

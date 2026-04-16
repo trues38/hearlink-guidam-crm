@@ -102,8 +102,14 @@ export default function SchedulesPage() {
   };
 
   const handleDateClick = (info: any) => {
+    let dateVal = info.dateStr;
+    if (!dateVal.includes("T")) {
+      dateVal += "T09:00";
+    } else {
+      dateVal = dateVal.substring(0, 16);
+    }
     setSelectedDate(info.dateStr);
-    setForm({ ...form, scheduledAt: info.dateStr });
+    setForm({ ...form, scheduledAt: dateVal });
     setShowModal(true);
   };
 
@@ -172,7 +178,7 @@ export default function SchedulesPage() {
         </button>
       </div>
 
-      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-white/60 dark:border-white/10 p-6 md:p-8 relative overflow-hidden group hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] transition-all duration-500 hover:bg-slate-900/60 z-10">
+      <div className="bg-slate-900 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-white/10 p-6 md:p-8 relative overflow-hidden group hover:shadow-[0_20px_40px_rgb(0,0,0,0.25)] transition-all duration-500 hover:bg-slate-800 z-10">
         {/* Dynamic Kick Inner Glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-300/30 to-transparent blur-3xl rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
         
@@ -192,7 +198,7 @@ export default function SchedulesPage() {
           droppable={true}
           eventDrop={(info) => handleUpdateEvent(info.event.id, info.event.startStr)}
           eventResizableFromStart={true}
-          height="auto"
+          height="850px"
           locale="ko"
           buttonText={{
             today: "오늘",
