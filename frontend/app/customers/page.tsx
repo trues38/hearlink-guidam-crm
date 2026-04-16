@@ -116,7 +116,7 @@ export default function CustomersPage() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="group relative inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white transition-all duration-300 bg-slate-900 rounded-2xl hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/20 overflow-hidden"
+          className="group relative inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-slate-800 dark:text-white transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/60 dark:border-white/10 rounded-2xl hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/20 hover:border-white/80 dark:border-white/20 hover:bg-white dark:hover:bg-white/10 overflow-hidden"
         >
           <span className="relative z-10 flex items-center gap-2">
             <svg className="w-5 h-5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,19 +136,19 @@ export default function CustomersPage() {
           placeholder="이름 또는 전화번호로 검색해보세요..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="relative w-full max-w-lg px-6 py-4 rounded-[1.25rem] border border-white/80 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl shadow-sm focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-200 font-medium placeholder-slate-400 transition-all"
+          className="relative w-full max-w-lg px-6 py-4 rounded-[1.25rem] border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-xl shadow-[inset_0px_1px_1px_rgba(255,255,255,0.05)] focus:outline-none focus:ring-1 focus:ring-white/20 text-slate-100 font-medium placeholder-slate-500 transition-all"
         />
       </div>
 
       {loading ? (
         <div className="text-slate-400 py-20 text-center font-bold animate-pulse">데이터를 불러오는 중입니다...</div>
       ) : filtered.length === 0 ? (
-        <div className="py-20 flex flex-col items-center justify-center text-slate-400 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="py-20 flex flex-col items-center justify-center text-slate-400 bg-white/60 dark:bg-white/5 backdrop-blur-3xl rounded-[2.5rem] border border-white/60 dark:border-white/10 shadow-[inner_0px_1px_1px_rgba(255,255,255,0.1)]">
           <div className="w-20 h-20 mb-5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-4xl shadow-inner animate-float">🔍</div>
           <p className="font-bold text-[15px]">검색된 고객이 없습니다.</p>
         </div>
       ) : (
-        <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-white/60 dark:border-white/10 relative z-10 group/table transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)]">
+        <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-[40px] rounded-[2.5rem] shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1),0_8px_30px_rgba(0,0,0,0.3)] border border-white/60 dark:border-white/10 relative z-10 group/table transition-all duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
            {/* Glow Effect */}
            <div className="absolute top-0 right-1/4 w-96 h-96 bg-gradient-to-br from-cyan-300/20 to-transparent blur-3xl rounded-full pointer-events-none opacity-0 group-hover/table:opacity-100 transition-opacity duration-700 -z-10"></div>
            
@@ -164,9 +164,9 @@ export default function CustomersPage() {
                 <th className="px-8 py-5 text-[13px] font-extrabold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-transparent text-right">등록일</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/40 dark:divide-white/10">
+            <tbody className="divide-y divide-white/10">
               {filtered.map(c => (
-                <tr key={c.id} className="group/row hover:bg-white dark:bg-slate-900/80 dark:hover:bg-slate-800/40 transition-all duration-300 cursor-pointer" onClick={() => router.push(`/customers/${c.id}`)}>
+                <tr key={c.id} className="group/row hover:bg-white/60 dark:bg-white/5 transition-all duration-300 cursor-pointer" onClick={() => router.push(`/customers/${c.id}`)}>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 border border-white dark:border-slate-700 shadow-sm flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold group-hover/row:scale-110 group-hover/row:from-blue-100 group-hover/row:to-cyan-100 dark:group-hover/row:from-blue-900 dark:group-hover/row:to-cyan-900 group-hover/row:text-blue-600 dark:group-hover/row:text-blue-400 transition-all duration-300">
@@ -204,7 +204,7 @@ export default function CustomersPage() {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-slide-up" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"></div>
 
-          <div className="relative bg-white/80 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white dark:border-white/10 shadow-[0_30px_60px_rgb(0,0,0,0.15)] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] border border-white/60 dark:border-white/10 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1),0_30px_60px_rgba(0,0,0,0.5)] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 dark:from-slate-800/50 to-transparent pointer-events-none z-0"></div>
             
             <div className="px-8 py-6 border-b border-slate-200/50 dark:border-white/10 flex items-center justify-between shrink-0 relative z-10">
@@ -314,7 +314,7 @@ export default function CustomersPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group relative px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 disabled:opacity-50 transition-all overflow-hidden flex items-center justify-center min-w-[100px]"
+                className="group relative px-6 py-2.5 rounded-xl font-bold text-slate-800 dark:text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 disabled:opacity-50 transition-all overflow-hidden flex items-center justify-center min-w-[100px]"
               >    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300 group-hover:scale-105"></div>
                   <span className="relative z-10 flex items-center gap-2">
                     {submitting ? '등록 중...' : '선택 완료 / 등록하기'}

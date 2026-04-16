@@ -115,29 +115,29 @@ export default function ConformityPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">적합성 심사</h1>
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-800 to-cyan-600 dark:from-blue-400 dark:to-cyan-200 tracking-tight drop-shadow-sm">적합성 심사</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">총 {filtered.length}건</p>
         </div>
       </div>
 
       {/* Status Filter */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 flex gap-2 flex-wrap">
-        <button onClick={() => setStatusFilter('')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${!statusFilter ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>전체</button>
+      <div className="bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-[2rem] border border-white/60 dark:border-white/10 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.05)] p-4 flex gap-2 flex-wrap">
+        <button onClick={() => setStatusFilter('')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${!statusFilter ? 'bg-blue-600 text-slate-800 dark:text-white' : 'bg-transparent text-slate-400 hover:bg-white dark:hover:bg-white/10'}`}>전체</button>
         {Object.entries(STATUS_LABELS).map(([status, label]) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === status ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>{label}</button>
+          <button key={status} onClick={() => setStatusFilter(status)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === status ? 'bg-blue-600 text-slate-800 dark:text-white' : 'bg-transparent text-slate-400 hover:bg-white dark:hover:bg-white/10'}`}>{label}</button>
         ))}
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">불러오는 중...</div>
+        <div className="text-slate-400 py-20 text-center bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/60 dark:border-white/10 animate-pulse">불러오는 중...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-slate-400 py-20 text-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">심사 기록이 없습니다.</div>
+        <div className="text-slate-400 py-20 text-center bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/60 dark:border-white/10 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.05)]">심사 기록이 없습니다.</div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-[40px] rounded-[2.5rem] shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1),0_8px_30px_rgba(0,0,0,0.3)] border border-white/60 dark:border-white/10 overflow-hidden relative z-10">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 dark:border-slate-700">
+              <tr className="border-b border-white/60 dark:border-white/10">
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">고객</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">회차</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">지원유형</th>
@@ -148,9 +148,9 @@ export default function ConformityPage() {
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">관리</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-white/10">
               {filtered.map(record => (
-                <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-900">
+                <tr key={record.id} className="hover:bg-white/60 dark:bg-white/5 transition-all duration-300">
                   <td className="px-6 py-4">
                     <Link href={`/customers/${record.customerId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400">
                       {record.customer?.name || '알 수 없음'}
@@ -179,32 +179,32 @@ export default function ConformityPage() {
 
       {/* Status Update Modal */}
       {showModal && selectedRecord && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg p-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-slide-up">
+          <div className="bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1),0_30px_60px_rgba(0,0,0,0.5)] border border-white/60 dark:border-white/10 w-full max-w-lg p-8">
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">심사 상태 변경</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               {selectedRecord.customer?.name} - #{selectedRecord.round}차 심사
             </p>
             <form onSubmit={handleStatusUpdate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">상태</label>
-                <select value={statusUpdate.status} onChange={e => setStatusUpdate(s => ({ ...s, status: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">상태</label>
+                <select value={statusUpdate.status} onChange={e => setStatusUpdate(s => ({ ...s, status: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-md text-slate-100 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all">
                   {Object.entries(STATUS_LABELS).map(([status, label]) => (
-                    <option key={status} value={status}>{label}</option>
+                    <option key={status} value={status} className="bg-slate-800">{label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">메모</label>
-                <textarea value={statusUpdate.notes} onChange={e => setStatusUpdate(s => ({ ...s, notes: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" rows={3} placeholder="검토 메모..." />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">메모</label>
+                <textarea value={statusUpdate.notes} onChange={e => setStatusUpdate(s => ({ ...s, notes: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-md text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all" rows={3} placeholder="검토 메모..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">필요 서류 (쉼표로 구분)</label>
-                <input type="text" value={statusUpdate.missingDocs} onChange={e => setStatusUpdate(s => ({ ...s, missingDocs: e.target.value }))} className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" placeholder="예: 주민등록초본, 소득증빙" />
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">필요 서류 (쉼표로 구분)</label>
+                <input type="text" value={statusUpdate.missingDocs} onChange={e => setStatusUpdate(s => ({ ...s, missingDocs: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-md text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all" placeholder="예: 주민등록초본, 소득증빙" />
               </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">취소</button>
-                <button type="submit" disabled={submitting} className="btn btn-primary">{submitting ? '저장 중...' : '저장'}</button>
+              <div className="flex justify-end gap-3 pt-6">
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl border border-white/80 dark:border-white/20 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-white/10 transition-colors font-bold text-sm">취소</button>
+                <button type="submit" disabled={submitting} className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-800 dark:text-white transition-colors font-bold text-sm">{submitting ? '저장 중...' : '저장'}</button>
               </div>
             </form>
           </div>
