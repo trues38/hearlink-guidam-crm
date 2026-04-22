@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Theme (Clean, Professional CRM look) */
+    --background: 248, 250, 252; /* slate-50 */
+    --foreground: 15, 23, 42; /* slate-900 */
+    
+    --surface: 255, 255, 255; /* white */
+    --surface-hover: 241, 245, 249; /* slate-100 */
+    
+    --border: 226, 232, 240; /* slate-200 */
+    --border-hover: 203, 213, 225; /* slate-300 */
+    
+    --muted: 100, 116, 139; /* slate-500 */
+    --muted-bg: 241, 245, 249; /* slate-100 */
+    
+    --brand: 59, 130, 246; /* blue-500 */
+    --brand-hover: 37, 99, 235; /* blue-600 */
+    --brand-muted: 219, 234, 254; /* blue-100 */
+  }
+
+  .dark {
+    /* Dark Theme (Impeccable, Spatial, Glassmorphism) */
+    --background: 10, 10, 10; /* neutral-950 */
+    --foreground: 237, 237, 237; /* neutral-200 */
+    
+    --surface: 23, 23, 23; /* neutral-900 */
+    --surface-hover: 38, 38, 38; /* neutral-800 */
+    
+    --border: 38, 38, 38; /* neutral-800 */
+    --border-hover: 64, 64, 64; /* neutral-700 */
+    
+    --muted: 163, 163, 163; /* neutral-400 */
+    --muted-bg: 38, 38, 38; /* neutral-800 */
+    
+    --brand: 59, 130, 246; /* blue-500 */
+    --brand-hover: 96, 165, 250; /* blue-400 */
+    --brand-muted: 30, 58, 138; /* blue-900/50 */
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-[rgb(var(--background))] text-[rgb(var(--foreground))] transition-colors duration-300;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Dynamic Glass/Surface Cards */
+  .glass-card {
+    @apply bg-[rgba(var(--surface),0.8)] backdrop-blur-lg border border-[rgba(var(--border),1)] rounded-2xl transition-all duration-300 shadow-sm dark:shadow-none hover:border-[rgba(var(--border-hover),1)];
+  }
+
+  .glass-panel {
+    @apply bg-[rgba(var(--surface),0.9)] backdrop-blur-xl border-r border-[rgba(var(--border),1)] transition-colors duration-300;
+  }
+  
+  .text-muted {
+    @apply text-[rgb(var(--muted))];
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-[rgba(var(--muted),0.3)] rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-[rgba(var(--muted),0.5)];
+}
