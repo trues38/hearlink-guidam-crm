@@ -8,11 +8,10 @@ const mockLogs = [
   { id: 1, type: "피팅/적합", customer: "김철수", device: "오티콘 리얼 1", author: "관리자", content: "우측 소리가 작다고 하여 이득(Gain) +2dB 상향 조정함.", time: "14:30", date: "2026.04.22", isSystem: false },
   { id: 5, type: "시스템", customer: "김철수", device: null, author: "관리자", content: "고객 기본 정보(이메일)를 수정했습니다.", time: "14:28", date: "2026.04.22", isSystem: true },
   { id: 2, type: "서류관리", customer: "이영희", device: "정부지원 모델", author: "최청능사", content: "보장구 급여비 지급청구서 작성 완료 및 서명 받음.", time: "11:15", date: "2026.04.22", isSystem: false },
-  { id: 6, type: "시스템", customer: "이영희", device: null, author: "김주임", content: "새로운 문서(보청기 적합관리 평가서)를 등록했습니다.", time: "11:10", date: "2026.04.22", isSystem: true },
-  { id: 3, type: "일반상담", customer: "박지민", device: null, author: "관리자", content: "신규 방문. 청력 검사 진행 및 보청기 보조금 상담.", time: "09:40", date: "2026.04.22", isSystem: false },
-  { id: 7, type: "시스템", customer: "박지민", device: null, author: "관리자", content: "신규 고객 데이터를 생성했습니다.", time: "09:00", date: "2026.04.22", isSystem: true },
   { id: 4, type: "수리/AS", customer: "정동원", device: "스타키 이볼브", author: "김주임", content: "좌측 리시버 단선으로 본사 수리 접수함 (우체국 택배).", time: "16:20", date: "2026.04.21", isSystem: false },
   { id: 8, type: "시스템", customer: "정동원", device: "스타키 이볼브", author: "김주임", content: "보유 기기 정보(시리얼 넘버)를 변경했습니다.", time: "16:15", date: "2026.04.21", isSystem: true },
+  { id: 9, type: "일반상담", customer: "박명수", device: null, author: "관리자", content: "정기 점검 방문. 기기 청소 및 필터 교체 진행.", time: "10:00", date: "2026.04.20", isSystem: false },
+  { id: 10, type: "피팅/적합", customer: "강호동", device: "시그니아 AX", author: "최청능사", content: "신규 착용 후 1주 점검. 말소리 명료도 개선 확인.", time: "15:30", date: "2026.04.20", isSystem: false },
 ];
 
 export default function WorklogsPage() {
@@ -34,6 +33,15 @@ export default function WorklogsPage() {
     return true;
   });
 
+  // Group logs by date
+  const groupedLogs = filteredLogs.reduce((acc, log) => {
+    if (!acc[log.date]) acc[log.date] = [];
+    acc[log.date].push(log);
+    return acc;
+  }, {} as Record<string, typeof mockLogs>);
+
+  const sortedDates = Object.keys(groupedLogs).sort((a, b) => b.localeCompare(a));
+
   return (
     <div className="space-y-6 md:space-y-8 pb-12 mt-16 md:mt-0">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -52,10 +60,6 @@ export default function WorklogsPage() {
             <div className={`w-8 h-4 rounded-full relative transition-colors ${showSystemLogs ? 'bg-brand-500' : 'bg-gray-300 dark:bg-gray-700'}`}>
               <div className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all ${showSystemLogs ? 'left-4.5 translate-x-full' : 'left-0.5'}`} />
             </div>
-          </button>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-muted-bg border border-border hover:bg-border text-foreground rounded-xl transition-colors shrink-0">
-            <Filter className="w-4 h-4" />
-            <span className="font-medium text-sm">상세 필터</span>
           </button>
         </motion.div>
       </header>
@@ -79,69 +83,86 @@ export default function WorklogsPage() {
         </div>
 
         <div className="divide-y divide-border">
-          {filteredLogs.map((log, index) => {
-            if (log.isSystem) {
-              return (
-                <motion.div 
-                  initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
-                  key={log.id} 
-                  className="px-5 py-3 hover:bg-muted-bg/30 transition-colors flex items-center gap-4 bg-muted-bg/10"
-                >
-                  <div className="w-24 shrink-0 flex items-center gap-2 text-xs text-muted">
-                    <span className="font-medium">{log.time}</span>
-                  </div>
-                  <div className="flex-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-                    <span className="font-bold text-foreground/70">{log.customer} 고객</span>
-                    <span>-</span>
-                    <span>{log.content}</span>
-                    <span className="text-xs bg-muted-bg border border-border px-1.5 py-0.5 rounded">작업: {log.author}</span>
-                  </div>
-                </motion.div>
-              );
-            }
-
-            return (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 + (index * 0.05) }}
-                key={log.id} 
-                className="p-5 hover:bg-muted-bg/30 transition-colors flex flex-col md:flex-row gap-4"
-              >
-                {/* Left Meta info */}
-                <div className="w-full md:w-48 shrink-0 flex flex-row md:flex-col justify-between md:justify-start items-center md:items-start gap-2">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-foreground">{log.date}</span>
-                    <span className="text-xs text-muted">{log.time}</span>
-                  </div>
-                  <div className="flex flex-row md:flex-col gap-2 items-end md:items-start">
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded border ${getBadgeStyle(log.type)}`}>{log.type}</span>
-                    <span className="text-xs text-muted font-medium bg-muted-bg px-2 py-0.5 rounded border border-border">작성: {log.author}</span>
-                  </div>
+          {sortedDates.length === 0 ? (
+            <div className="p-20 flex flex-col items-center justify-center text-center">
+              <ClipboardList className="w-12 h-12 text-muted/30 mb-4" />
+              <p className="text-muted text-sm font-medium">기록된 업무 일지가 없습니다.</p>
+            </div>
+          ) : (
+            sortedDates.map((date) => (
+              <div key={date} className="relative">
+                {/* Date Header */}
+                <div className="bg-muted-bg/50 px-5 py-2 sticky top-0 z-10 border-b border-border flex items-center justify-between backdrop-blur-md">
+                  <span className="text-xs font-bold text-muted uppercase tracking-widest">{date}</span>
+                  <span className="text-[10px] text-muted-foreground/60">{groupedLogs[date].length}건의 활동</span>
                 </div>
 
-                {/* Main Content */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer">{log.customer} 고객</h3>
-                    {log.device && (
-                      <span className="text-xs px-2 py-0.5 rounded bg-muted-bg border border-border text-muted">
-                        🏷️ {log.device}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed">{log.content}</p>
-                </div>
+                <div className="divide-y divide-border/50">
+                  {groupedLogs[date].map((log, index) => {
+                    if (log.isSystem) {
+                      return (
+                        <motion.div 
+                          initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}
+                          key={log.id} 
+                          className="px-5 py-3 hover:bg-muted-bg/30 transition-colors flex items-center gap-4 bg-muted-bg/5"
+                        >
+                          <div className="w-16 shrink-0 flex items-center gap-2 text-xs text-muted/70">
+                            <span className="font-medium">{log.time}</span>
+                          </div>
+                          <div className="flex-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+                            <span className="font-bold text-foreground/60 text-xs">{log.customer} 고객</span>
+                            <span className="text-muted/30">|</span>
+                            <span className="text-xs">{log.content}</span>
+                            <span className="text-[10px] bg-muted-bg/50 border border-border/50 px-1.5 py-0.5 rounded text-muted-foreground ml-auto">By {log.author}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    }
 
-                {/* Quick Actions */}
-                <div className="hidden lg:flex items-start shrink-0">
-                  <button className="text-xs font-medium text-muted hover:text-brand-500 transition-colors flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> 확인 처리
-                  </button>
+                    return (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+                        key={log.id} 
+                        className="p-5 hover:bg-muted-bg/30 transition-colors flex flex-col md:flex-row gap-4 relative group"
+                      >
+                        {/* Time & Author Tag */}
+                        <div className="w-full md:w-32 shrink-0 flex flex-row md:flex-col justify-between md:justify-start items-center md:items-start gap-1">
+                          <span className="text-sm font-bold text-foreground">{log.time}</span>
+                          <span className="text-[10px] text-muted font-medium bg-muted-bg px-2 py-0.5 rounded border border-border">{log.author}</span>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h3 className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer text-sm">{log.customer} 고객</h3>
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border shadow-sm ${getBadgeStyle(log.type)}`}>
+                              #{log.type}
+                            </span>
+                            {log.device && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted-bg border border-border text-muted font-medium">
+                                🏷️ {log.device}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-foreground/90 leading-relaxed font-medium">{log.content}</p>
+                        </div>
+
+                        {/* Quick Actions (Appear on hover) */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-5 top-5">
+                          <button className="p-2 hover:bg-emerald-500/10 text-emerald-600 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20" title="확인 완료">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
-              </motion.div>
-            );
-          })}
+              </div>
+            ))
+          )}
         </div>
       </motion.div>
     </div>
+
   );
 }
