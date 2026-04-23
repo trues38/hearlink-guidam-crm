@@ -60,69 +60,64 @@ export default function CopilotDrawer() {
     }
   }, [isOpen, messages, isTyping]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isTyping) return;
 
     const userText = input.trim();
-    
-    // Add user message
     const newUserMsg: Message = { id: Date.now().toString(), role: "user", content: userText };
-    setMessages(prev => [...prev, newUserMsg]);
+    const allMessages = [...messages, newUserMsg];
+
+    setMessages(allMessages);
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI reasoning and response based on keywords
-    setTimeout(() => {
-      setIsTyping(false);
-      
-      let aiResponse: Message;
+    const assistantId = (Date.now() + 1).toString();
+    setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "" }]);
 
-      if (userText.includes("김철수")) {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "김철수 고객님의 프로필을 찾았습니다.",
-          component: <CustomerSummaryCard id="1" name="김철수" phone="010-1234-5678" device="오티콘 리얼 1" lastVisit="2026.04.15" />
-        };
-      } else if (userText.includes("일정") || userText.includes("오늘")) {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "오늘 예정된 일정 목록입니다.",
-          component: (
-            <ScheduleListCard 
-              date="4월 22일 (수)"
-              schedules={[
-                { id: "1", time: "10:00", title: "박지민 고객님", type: "상담" },
-                { id: "2", time: "14:30", title: "김철수 고객님", type: "적합" }
-              ]}
-            />
-          )
-        };
-      } else if (userText.includes("업무일지") || userText.includes("기록")) {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "네, 내용을 파악했습니다. 업무일지에 추가할까요?",
-          component: (
-            <ActionConfirmationCard 
-              title="업무일지 자동 기록" 
-              description="대화 맥락을 분석하여 방금 전 완료하신 '피팅/적합' 활동을 김철수 고객님의 타임라인에 기록합니다."
-              onConfirm={() => console.log("Confirmed")}
-            />
-          )
-        };
-      } else {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "말씀하신 내용을 바탕으로 어떻게 도와드릴까요? (예: '김철수 고객 찾아줘', '오늘 일정 보여줘', '방금 상담한 내용 업무일지에 기록해줘')"
-        };
+    try {
+      const res = await fetch("/api/hermes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "hermes-agent",
+          messages: allMessages.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error("Hermes 응답 오류");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
+
+        for (const line of lines) {
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parsed.choices?.[0]?.delta?.content ?? "";
+            accumulated += delta;
+            setMessages(prev =>
+              prev.map(m => m.id === assistantId ? { ...m, content: accumulated } : m)
+            );
+          } catch {}
+        }
       }
-
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1200);
+    } catch {
+      setMessages(prev =>
+        prev.map(m => m.id === assistantId ? { ...m, content: "연결 오류가 발생했습니다. 잠시 후 다시 시도해주세요." } : m)
+      );
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -188,7 +183,7 @@ export default function CopilotDrawer() {
 
             {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide bg-background/30">
-              {messages.map((msg) => (
+              {messages.filter(m => !(m.role === "assistant" && m.content === "" && !isTyping)).map((msg) => (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
