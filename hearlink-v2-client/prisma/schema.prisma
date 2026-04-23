@@ -1,0 +1,1033 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Center {
+  id                     String    @id @default(uuid()) @db.Uuid
+  name                   String
+  email                  String
+  businessNumber         String    @unique
+  ceoName                String
+  contactNumber          String
+  address                String
+  fax                    String?
+  postalCode             String?
+  bankName               String?
+  accountNumber          String?
+  accountHolder          String?
+  ceoResidentNumber      String?
+  signatureKey           String?
+  barobillId             String?
+  certificationExpiredAt DateTime? @db.Date
+
+  createdAt DateTime @default(now())
+
+  users               User[]
+  paymentMethod       PaymentMethod?
+  subscription        Subscription?
+  devices             Device[]
+  customers           Customer[]
+  schedules           Schedule[]
+  batteries           Battery[]
+  accessories         Accessory[]
+  sales               Sale[]
+  tasks               Task[]
+  taxInvoices         TaxInvoice[]
+  workLogs            WorkLog[]
+  notifications       Notification[]
+  kakaoTalkLogs      KakaoTalkLog[]
+  tossPayments        TossPayment[]
+  barobillFaxes       BarobillFax[]
+  documentDrafts      DocumentDraft[]
+  ptaRecords          PTARecord[]
+  auditLogs           AuditLog[]
+  faxQueues           FaxQueue[]
+  submissionPackages  SubmissionPackage[]
+  copilotAuditLogs    CopilotAuditLog[]
+}
+
+model Subscription {
+  centerId    String             @id @db.Uuid
+  status      SubscriptionStatus @default(TRIALING)
+  currentPlan Plan               @default(BASIC)
+  nextPlan    Plan?
+  startDate   DateTime           @default(now()) @db.Date
+  endDate     DateTime           @db.Date // endDate 다음날이 결제일임
+  updatedAt   DateTime           @default(now()) @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id        String      @id @default(uuid()) @db.Uuid
+  centerId  String      @db.Uuid
+  type      PaymentType
+  amount    Int
+  plan      Plan
+  reason    String?
+  createdAt DateTime    @default(now())
+}
+
+model PaymentMethod {
+  centerId   String              @id @db.Uuid
+  status     PaymentMethodStatus @default(ACTIVE)
+  billingKey String
+  cardName   String
+  cardNumber String
+  updatedAt  DateTime            @default(now()) @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  centerId      String   @db.Uuid
+  role          UserRole
+  email         String
+  name          String
+  contactNumber String
+  password      String
+  createdAt     DateTime @default(now())
+
+  center        Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+  workLogs      WorkLog[]
+  notifications Notification[]
+  copilotAuditLogs CopilotAuditLog[]
+}
+
+model RefreshToken {
+  userId    String   @db.Uuid
+  token     String
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, token])
+}
+
+model Customer {
+  id                    String                  @id @default(uuid()) @db.Uuid
+  centerId              String                  @db.Uuid
+  name                  String
+  contactNumber         String
+  birthDate             DateTime?               @db.Date
+  gender                Gender?
+  email                 String?
+  residentNumber        String?
+  postalCode            String?
+  addressLine1          String?
+  addressLine2          String?
+  classification        CustomerClassification? // 자가, 타기관, 히어닷컴
+  governmentSupportType GovernmentSupportType? // 장애등급소지자, 장애가망, 산업재해, 일반
+  processType           ProcessType? // 사전인증, 사후인증
+  recipientType         RecipientType? // 수급자, 차상위, 일반
+  lossType              HearingLossType?
+  referralSource        String? // 유입경로
+  hospitalName          String?
+  score                 Int?
+  memo                  String?
+  signatureKey          String?
+  signatureDate         DateTime?               @db.Date
+  createdAt             DateTime                @default(now())
+
+  center            Center                @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  audiometries      Audiometry[]
+  consultations     Consultation[]
+  devices           CustomerDevice[]
+  fittingLogs       FittingLog[]
+  sales             Sale[]
+  referrer          Referral?             @relation("Referee")
+  referees          Referral[]            @relation("Referrer")
+  tasks             Task[]
+  documents         Document[]
+  conformityRecords ConformityRecord[]
+  signatureRequests SignatureRequest[]
+  taxInvoices       TaxInvoice[]
+  workLogs          WorkLog[]
+  notifications     Notification[]
+  schedules          Schedule[]
+  customerEvents     CustomerEvent[]
+  documentPreviews  DocumentPreview[]
+  documentLinkages  DocumentDataLinkage[]
+  tossPayments      TossPayment[]
+  barobillFaxes     BarobillFax[]
+  documentDrafts    DocumentDraft[]
+  ptaRecords        PTARecord[]
+  submissionPackages SubmissionPackage[]
+}
+
+model Referral {
+  referrerId String   @db.Uuid // 추천한 고객
+  refereeId  String   @id @db.Uuid // 추천받은 고객 
+  createdAt  DateTime @default(now())
+
+  referrer Customer @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee  Customer @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+}
+
+model CustomerDevice {
+  id           String      @id @default(uuid()) @db.Uuid
+  customerId   String      @db.Uuid
+  brand        DeviceBrand
+  model        String
+  type         DeviceType
+  color        DeviceColor
+  ear          Ear
+  receiver     String
+  serialNumber String?
+  memo         String?
+  createdAt    DateTime    @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model FittingLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  customerId String      @db.Uuid
+  brand      DeviceBrand
+  model      String
+  ear        Ear
+  content    String
+  createdAt  DateTime    @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Consultation {
+  id          String             @id @default(uuid()) @db.Uuid
+  customerId  String             @db.Uuid
+  content     String
+  method      ConsultationMethod
+  consultedAt DateTime
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Device {
+  id                String      @id @default(uuid()) @db.Uuid
+  centerId          String      @db.Uuid
+  brand             DeviceBrand
+  model             String
+  type              DeviceType
+  ear               Ear
+  color             DeviceColor
+  heardotcom        Boolean     @default(false)
+  used              Boolean     @default(false)
+  governmentSupport Boolean     @default(false)
+
+  center        Center               @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  serialNumbers DeviceSerialNumber[]
+}
+
+model DeviceSerialNumber {
+  centerId     String   @db.Uuid
+  deviceId     String   @db.Uuid
+  serialNumber String
+  createdAt    DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@id([centerId, serialNumber])
+  @@index([deviceId, serialNumber])
+}
+
+model Battery {
+  id         String  @id @default(uuid()) @db.Uuid
+  centerId   String  @db.Uuid
+  model      String
+  quantity   Int     @default(0)
+  heardotcom Boolean @default(false)
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+model Accessory {
+  id         String  @id @default(uuid()) @db.Uuid
+  centerId   String  @db.Uuid
+  name       String
+  quantity   Int     @default(0)
+  heardotcom Boolean @default(false)
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+model Audiometry {
+  id         String           @id @default(uuid()) @db.Uuid
+  customerId String           @db.Uuid
+  lossType   HearingLossType?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @default(now())
+
+  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  pureToneResults   PureToneResult[]
+  speechTestResults SpeechTestResult[]
+}
+
+model PureToneResult {
+  id           String       @id @default(uuid()) @db.Uuid
+  audiometryId String       @db.Uuid
+  ear          Ear
+  testType     ToneTestType
+  frequency    Int
+  decibel      Int
+  masked       Boolean      @default(false)
+  noResponse   Boolean      @default(false)
+
+  audiometry Audiometry @relation(fields: [audiometryId], references: [id], onDelete: Cascade)
+}
+
+model SpeechTestResult {
+  id           String @id @default(uuid()) @db.Uuid
+  audiometryId String @db.Uuid
+  ear          Ear
+  decibel      Int
+  percentage   Int
+
+  audiometry Audiometry @relation(fields: [audiometryId], references: [id], onDelete: Cascade)
+}
+
+model Schedule {
+  id          String   @id @default(uuid()) @db.Uuid
+  centerId    String   @db.Uuid
+  customerId  String?  @db.Uuid
+  title       String
+  description String?
+  scheduledAt DateTime
+
+  center   Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tasks    Task[]
+}
+
+model Sale {
+  id          String     @id @default(uuid()) @db.Uuid
+  centerId    String     @db.Uuid
+  customerId  String?    @db.Uuid
+  totalAmount Int
+  paidAmount  Int
+  memo        String?
+  status      SaleStatus
+  /// [SaleData]
+  data        Json
+  refundedAt  DateTime?
+  createdAt   DateTime   @default(now())
+
+  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tossPayments TossPayment[]
+}
+
+model Task {
+  id         String    @id @default(uuid()) @db.Uuid
+  centerId   String    @db.Uuid
+  customerId String?   @db.Uuid
+  assigneeId String?   @db.Uuid
+  memo       String?
+  orderedAt  DateTime? @db.Date
+  arrivedAt  DateTime? @db.Date
+  scheduleId String?   @db.Uuid
+  type       TaskType
+  priority   Int?      @default(0)
+  status     String?   @default("PENDING")
+  dueAt      DateTime?
+  /// [TaskData]
+  data       Json      @default("{}")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  center   Center    @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  schedule Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+}
+
+model ConformityRecord {
+  id            String             @id @default(uuid()) @db.Uuid
+  customerId    String             @db.Uuid
+  round         Int                @default(1)
+  supportType   GovernmentSupportType?
+  recipientType  RecipientType?
+  status        ConformityStatus   @default(PENDING)
+  missingDocs   Json?             @default("[]")
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, round])
+}
+
+enum ConformityStatus {
+  PENDING
+  IN_REVIEW
+  NEEDS_SUPPLEMENT
+  APPROVED
+  REJECTED
+}
+
+model Document {
+  id            String                @id @default(uuid()) @db.Uuid
+  customerId    String                @db.Uuid
+  purpose       DocumentPurpose
+  insuranceType DocumentInsuranceType
+  type          DocumentType
+  key           String
+  createdAt     DateTime              @default(now())
+
+  customer            Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  DocumentPreview     DocumentPreview?
+  DocumentDataLinkage DocumentDataLinkage[]
+
+  @@unique([customerId, purpose, insuranceType, type])
+}
+
+model SignatureRequest {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @unique @db.Uuid
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Admin {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+
+  refreshTokens AdminRefreshToken[]
+}
+
+model AdminRefreshToken {
+  adminId   String   @db.Uuid
+  token     String
+  updatedAt DateTime @default(now()) @updatedAt
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@id([adminId, token])
+}
+
+enum DeviceBrand {
+  OTICON
+  SIGNIA
+  BELTON
+  STARKEY
+  PHONAK
+  WIDEX
+}
+
+enum TaskType {
+  NEW_DEVICE
+  REPAIR
+  SHIPPING
+}
+
+enum ProcessType {
+  PRE_CERTIFICATION
+  POST_CERTIFICATION
+}
+
+enum RecipientType {
+  RECIPIENT // 수급자: 지자체 100%
+  NEAR_POVERTY // 차상위: 공단 100%
+  GENERAL // 일반: 공단 90%
+}
+
+enum CustomerClassification {
+  SELF
+  OTHER
+  HEARDOTCOM
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum Ear {
+  LEFT
+  RIGHT
+}
+
+enum PaymentType {
+  REFUND
+  CHARGE
+  FAILURE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum ToneTestType {
+  AC
+  BC
+  MCL
+  UCL
+}
+
+enum Plan {
+  BASIC
+}
+
+enum UserRole {
+  MANAGER
+  STAFF
+}
+
+enum PaymentMethodStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum HearingLossType {
+  CONDUCTIVE // 전음성
+  SENSORINEURAL // 감각신경성
+  SUDDEN // 돌발성
+  NOISE_INDUCED // 소음성
+}
+
+enum GovernmentSupportType {
+  DISABILITY_GRADE_HOLDER // 장애등급소지자
+  POTENTIAL_DISABILITY // 장애가망
+  INDUSTRIAL_ACCIDENT // 산업재해
+  GENERAL // 일반
+}
+
+enum ConsultationMethod {
+  CENTER_VISIT // 센터방문
+  HOME_VISIT // 재택방문
+  REMOTE // 원격
+}
+
+enum DeviceType {
+  RIC // 오픈형
+  ITE // 귓속형
+  BTE // 귀걸이형
+  BONE_CONDUCTION // 골도형
+}
+
+enum DeviceColor {
+  RED
+  BLUE
+  BEIGE
+  BLACK
+  SILVER
+  OTHER
+}
+
+enum SaleStatus {
+  PAID
+  UNPAID
+  REFUNDED
+}
+
+enum DocumentPurpose {
+  DEVICE // 보조기기 지급 청구
+  CONFORMITY // 적합관리 급여청구서
+}
+
+enum DocumentInsuranceType {
+  GENERAL // 일반 건강보험
+  LOCAL_MEDICAL // 지자체-의료1종
+}
+
+model TaxInvoice {
+  id         String @id @default(uuid()) @db.Uuid
+  centerId   String @db.Uuid
+  customerId String @db.Uuid
+  mgtNum     String // 바로빌 관리번호 (24자리 이내), DateTime으로 들어감
+
+  taxType      TaxInvoiceTaxType // 종류
+  purposeType  TaxInvoicePurposeType // 구분
+  item         String // 품목명
+  supplyAmount Int // 공급가액
+  taxAmount    Int // 세액
+  totalAmount  Int // 합계금액
+  purchaseDate DateTime              @db.Date // 거래일자 (작성일자로도 사용)
+  memo         String? // 비고
+
+  createdAt DateTime @default(now())
+
+  center      Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer    Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  BarobillFax BarobillFax[]
+
+  @@unique([centerId, mgtNum])
+}
+
+enum TaxInvoiceTaxType {
+  GENERAL // 일반
+  ZERO_TAX // 영세율
+}
+
+enum TaxInvoicePurposeType {
+  RECEIPT // 영수
+  CLAIM // 청구
+}
+
+enum DocumentType {
+  // 공통
+  TAX_INVOICE // 전자세금계산서
+  TRANSACTION_STATEMENT // 거래명세표 (생성)
+
+  // DEVICE
+  PRESCRIPTION // 처방전 (지자체일경우 먼저제출)
+  HOSPITAL_AUDIOGRAM // 6개월이내 청력검사지(병원) (지자체일경우 먼저 제출)
+  DEVICE_CLAIM // 보조기기 급여 지급청구서 (생성)
+  STANDARD_CONTRACT // 표준계약서 (생성)
+  CLAIM_DELEGATION // 지급청구 위임장 (생성)
+  INSPECTION_CERTIFICATE // 검수확인서(병원)
+  INSPECTION_AUDIOGRAM // 검수청력검사지(병원)
+  ID_COPY // 신분증사본
+  DEVICE_BARCODE_PHOTO // 보청기/바코드사진
+
+  // 지자체만 추가
+  DEVICE_APPLICATION // 보조기기 급여 신청서 (먼저 제출) (생성)
+
+  // CONFORMITY
+  FITTING_REPORT // 피팅레포트
+  CENTER_AUDIOGRAM // 청력검사지(센터)
+  CONFORMITY_CLAIM // 적합관리 급여청구서 (생성)
+
+  // 지자체만 추가
+  CONFORMITY_CERTIFICATE // 보청기 적합관리 확인서 (생성)
+}
+
+model WorkLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  centerId   String      @db.Uuid
+  userId     String      @db.Uuid
+  customerId String?     @db.Uuid
+  type       WorkLogType
+  content    String
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  center   Center    @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+}
+
+enum WorkLogType {
+  CUSTOMER_VISIT
+  PHONE_CALL
+  DEVICE_FITTING
+  FOLLOW_UP
+  DOCUMENT_PREP
+  MEETING
+  ADMIN_TASK
+  OTHER
+}
+
+model CopilotAuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  centerId  String   @db.Uuid
+  userId    String?  @db.Uuid
+  toolName  String
+  input     Json
+  output    Json?
+  createdAt DateTime @default(now())
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id          String           @id @default(uuid()) @db.Uuid
+  centerId    String           @db.Uuid
+  userId      String           @db.Uuid
+  type        NotificationType
+  title       String
+  content     String
+  link        String?
+  isRead      Boolean          @default(false)
+  kakaoSent   Boolean          @default(false)
+  kakaoSentAt DateTime?
+  createdAt   DateTime         @default(now())
+
+  center       Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Customer     Customer?      @relation(fields: [customerId], references: [id])
+  customerId   String?        @db.Uuid
+  KakaoTalkLog KakaoTalkLog[]
+}
+
+enum NotificationType {
+  SCHEDULE_REMINDER
+  PAYMENT_DUE
+  CUSTOMER_REGISTERED
+  DOCUMENT_READY
+  TASK_ASSIGNED
+  SYSTEM
+}
+
+model KakaoTalkLog {
+  id              String          @id @default(uuid()) @db.Uuid
+  notificationId  String?         @db.Uuid
+  centerId        String          @db.Uuid
+  recipientNumber String
+  templateCode    String
+  content         String
+  status          KakaoSendStatus
+  sentAt          DateTime?
+  errorMessage    String?
+  createdAt       DateTime        @default(now())
+
+  notification Notification? @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+enum KakaoSendStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model DocumentPreview {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @db.Uuid
+  previewUrl String
+  pdfUrl     String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.Uuid
+
+  @@unique([documentId])
+}
+
+model DocumentDataLinkage {
+  id           String         @id @default(uuid()) @db.Uuid
+  documentId   String         @db.Uuid
+  sourceType   DataSourceType
+  sourceId     String?
+  mappedFields Json
+  status       LinkageStatus
+  errorMessage String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.Uuid
+}
+
+enum DataSourceType {
+  CUSTOMER_FORM
+  AUDIOMETRY
+  DEVICE
+  PAYMENT
+  GOVERNMENT_API
+  MANUAL
+}
+
+enum LinkageStatus {
+  PENDING
+  LINKED
+  PARTIAL
+  FAILED
+}
+
+model TossPayment {
+  id          String            @id @default(uuid()) @db.Uuid
+  centerId    String            @db.Uuid
+  customerId  String?           @db.Uuid
+  saleId      String?           @db.Uuid
+  orderId     String            @unique
+  paymentKey  String?
+  amount      Int
+  method      TossPaymentMethod
+  status      TossPaymentStatus
+  approvedAt  DateTime?
+  cancelledAt DateTime?
+  failReason  String?
+  createdAt   DateTime          @default(now())
+
+  center   Center    @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  sale     Sale?     @relation(fields: [saleId], references: [id], onDelete: SetNull)
+}
+
+enum TossPaymentMethod {
+  CARD
+  ACCOUNT
+  TRANSFER
+  CELLPHONE
+  BOOK
+}
+
+enum TossPaymentStatus {
+  READY
+  IN_PROGRESS
+  DONE
+  CANCELLED
+  PARTIAL_CANCELLED
+  FAILED
+}
+
+model BarobillFax {
+  id           String            @id @default(uuid()) @db.Uuid
+  centerId     String            @db.Uuid
+  customerId   String?           @db.Uuid
+  taxInvoiceId String?           @db.Uuid
+  mgtNum       String
+  faxNumber    String
+  documentType BarobillDocType
+  fileUrl      String
+  status       BarobillFaxStatus
+  sentAt       DateTime?
+  completedAt  DateTime?
+  errorCode    String?
+  errorMessage String?
+  createdAt    DateTime          @default(now())
+
+  center     Center      @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  taxInvoice TaxInvoice? @relation(fields: [taxInvoiceId], references: [id], onDelete: SetNull)
+}
+
+enum BarobillDocType {
+  TAX_INVOICE
+  PRICE_CALCULATION
+  CONTRACT
+  CUSTOM_APPLICATION
+}
+
+enum BarobillFaxStatus {
+  PENDING
+  TRANSMITTING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+// ============================================
+// Phase 3: New Models
+// ============================================
+
+model CustomerEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  customerId   String   @db.Uuid
+  eventType    String
+  eventAt      DateTime @default(now())
+  payload      Json?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, eventAt])
+}
+
+model TaskRule {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  enabled     Boolean  @default(true)
+  priority    Int      @default(0)
+  condition   Json
+  actionType  String
+  actionTitle String
+  dueDays     Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// v1.0: Document Automation
+// ============================================
+
+model DocumentTemplate {
+  id            String   @id @default(uuid()) @db.Uuid
+  code          String   @unique // e.g., "DEVICE_CLAIM", "CONFORMITY_CERTIFICATE"
+  name          String   // e.g., "보청기 급여 지급청구서"
+  purpose       DocumentPurpose
+  insuranceType DocumentInsuranceType
+  description   String?
+  fields        Json     // Field definitions with auto/sensitive/manual classification
+  templateData  Json?    // Static template content
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  drafts DocumentDraft[]
+}
+
+model DocumentDraft {
+  id              String   @id @default(uuid()) @db.Uuid
+  templateId     String   @db.Uuid
+  customerId     String   @db.Uuid
+  centerId       String   @db.Uuid
+  status         DraftStatus @default(PENDING)
+  
+  // Calculated fields state
+  fieldStates    Json     @default("{}") // { fieldName: "AUTO" | "SENSITIVE" | "MANUAL" }
+  autoFilled     Json     @default("{}") // { fieldName: value }
+  missingFields  Json     @default("[]") // ["field1", "field2"]
+  missingCritical Json    @default("[]") // ["field1"] - blocking fields
+  
+  canAutoDraft   Boolean  @default(false)
+  draftData      Json?    // The actual generated draft
+  
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  submittedAt    DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  template DocumentTemplate @relation(fields: [templateId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  center  Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, templateId])
+  @@index([centerId, status])
+}
+
+enum DraftStatus {
+  PENDING
+  IN_REVIEW
+  READY_TO_SUBMIT
+  SUBMITTED
+  FAILED
+}
+
+// ============================================
+// v1.0: Government Support Calculation
+// ============================================
+
+model PTARecord {
+  id              String   @id @default(uuid()) @db.Uuid
+  centerId       String   @db.Uuid
+  customerId      String   @db.Uuid
+  ear             Ear
+  // PTA4 = (500Hz + 1000Hz + 2000Hz + 4000Hz) / 4
+  pta4Right       Int?     // dB hearing level
+  pta4Left        Int?
+  grade           HearingGrade? // HIGH, BORDERLINE, LOW
+  computedAt      DateTime @default(now())
+
+  center   Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+enum HearingGrade {
+  HIGH      // >= 62 dB - 장애등급 가능성 높음
+  BORDERLINE // 58-61 dB -边界
+  LOW       // < 58 dB - 낮음
+}
+
+// ============================================
+// v1.0: Audit Log
+// ============================================
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  centerId   String   @db.Uuid
+  userId     String?  @db.Uuid
+  entityType String   // "Customer", "Document", "DocumentDraft"
+  entityId   String   @db.Uuid
+  action     String   // "CREATE", "UPDATE", "DELETE", "VIEW_SENSITIVE"
+  fieldName  String?  // If specific field was changed
+  oldValue   String?  // Masked if sensitive
+  newValue   String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([centerId, createdAt])
+}
+
+// ============================================
+// v1.0: Submission Queue
+// ============================================
+
+model FaxQueue {
+  id            String   @id @default(uuid()) @db.Uuid
+  centerId     String   @db.Uuid
+  customerId   String?  @db.Uuid
+  draftId      String?  @db.Uuid
+  faxNumber    String
+  documentType String
+  fileUrl      String
+  status       FaxStatus @default(QUEUED)
+  attempts     Int      @default(0)
+  maxAttempts  Int      @default(3)
+  lastError    String?
+  queuedAt     DateTime @default(now())
+  sentAt       DateTime?
+  completedAt  DateTime?
+
+  center   Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([centerId, status])
+}
+
+enum FaxStatus {
+  QUEUED
+  TRANSMITTING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model SubmissionPackage {
+  id            String   @id @default(uuid()) @db.Uuid
+  centerId     String   @db.Uuid
+  customerId   String   @db.Uuid
+  track        GovernmentTrack // "NATIONAL" (공단), "LOCAL" (지자체)
+  status       SubmissionStatus @default(PENDING)
+  
+  // Documents included
+  includedDrafts Json @default("[]") // [draftId1, draftId2]
+  zipUrl        String?
+  
+  // Checklist state
+  missingDocuments Json @default("[]")
+  requiresSignature Json @default("[]") // [draftId requiring signature]
+  sensitiveWarnings Json @default("[]")
+  
+  submittedAt   DateTime?
+  submittedBy  String?
+  createdAt    DateTime @default(now())
+
+  center   Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([centerId, status])
+}
+
+enum GovernmentTrack {
+  NATIONAL     // 공단 (일반/차상위) - 팩스
+  LOCAL        // 지자체 (의료1종 수급자) - ZIP 다운로드
+}
+
+enum SubmissionStatus {
+  PENDING
+  READY
+  SUBMITTED
+  COMPLETED
+  FAILED
+}
