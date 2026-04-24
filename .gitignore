@@ -3,16 +3,16 @@ node_modules/
 node_modules.bak/
 node_modules_partial/
 node_modules_corrupted/
-frontend/node_modules/
-frontend/node_modules_partial/
-frontend/node_modules_corrupted/
-backend/node_modules/
+
+
+
+
 .pnp
 .pnp.js
 
 # Python virtual environment
 venv/
-backend/venv/
+
 *.pyc
 __pycache__/
 
@@ -68,3 +68,4 @@ force_dark.py
 force_global_dark.py
 auto_invert.py
 fix_white.js
+node_modules 2/
