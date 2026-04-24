@@ -69,3 +69,6 @@ force_global_dark.py
 auto_invert.py
 fix_white.js
 node_modules 2/
+
+# Legacy folder (contents moved to root)
+hearlink-v2-client/
