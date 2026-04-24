@@ -82,10 +82,16 @@
   @apply bg-[rgba(var(--muted),0.5)];
 }
 
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
 @media print {
   body {
     background: white !important;
     color: black !important;
+    font-size: 9px !important;
   }
   aside, nav, [role="navigation"], #sidebar, #copilot-drawer {
     display: none !important;
@@ -106,5 +112,16 @@
   }
   .print\:hidden {
     display: none !important;
+  }
+  table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    font-size: 8px !important;
+  }
+  table th, table td {
+    padding: 4px 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 }
