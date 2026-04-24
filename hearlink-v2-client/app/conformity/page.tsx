@@ -48,7 +48,7 @@ const initialData: ConformityRecord[] = [
 ];
 
 const calculateDDay = (dueDate: string) => {
-  const today = new Date('2026-04-24T00:00:00Z').getTime();
+  const today = new Date().setHours(0, 0, 0, 0);
   const target = new Date(dueDate).getTime();
   const diffTime = target - today;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -62,6 +62,32 @@ const getDDayText = (dDay: number) => {
 }
 
 type SortConfig = { key: keyof ConformityRecord | 'dDay', direction: 'asc' | 'desc' } | null;
+
+const getRoundStatus = (item: ConformityRecord, colRound: number | 'RENEWAL') => {
+  if (colRound === 'RENEWAL') {
+    if (item.targetRound === 'RENEWAL') {
+      if (item.status === 'TARGET') return '대상자';
+      if (item.status === 'DOC_SUBMITTED') return '서류접수';
+      if (item.status === 'PAYMENT_CONFIRMED') return '입금확인';
+    }
+    return '-';
+  }
+
+  if (typeof item.targetRound === 'number') {
+    if (colRound < item.targetRound) {
+      return item.history[colRound] || '기간만료';
+    } 
+    if (colRound === item.targetRound) {
+      if (item.status === 'TARGET') return '대상자';
+      if (item.status === 'DOC_SUBMITTED') return '서류접수';
+      if (item.status === 'PAYMENT_CONFIRMED') return '입금확인';
+    }
+    return '-';
+  } else if (item.targetRound === 'RENEWAL') {
+    return item.history[colRound] || '기간만료';
+  }
+  return '-';
+};
 
 export default function ConformityWorkflowDashboard() {
   const [data, setData] = useState<ConformityRecord[]>([]);
@@ -79,7 +105,7 @@ export default function ConformityWorkflowDashboard() {
     }, 300);
   }, []);
 
-  const changeStatus = async (id: string, newStatus: WorkflowStatus, historyRoundIndex?: number) => {
+  const changeStatus = (id: string, newStatus: WorkflowStatus, historyRoundIndex?: number) => {
     setData(prev => prev.map(item => {
       if (item.id === id) {
         if (historyRoundIndex !== undefined) {
@@ -89,7 +115,14 @@ export default function ConformityWorkflowDashboard() {
           }
           return { ...item, history: newHistory };
         }
-        return { ...item, status: newStatus };
+        
+        const updatedItem = { ...item, status: newStatus };
+        if (newStatus === 'DOC_SUBMITTED' && typeof item.targetRound === 'number') {
+          const newHistory = [...item.history];
+          newHistory[item.targetRound] = '서류접수';
+          updatedItem.history = newHistory;
+        }
+        return updatedItem;
       }
       return item;
     }));
@@ -132,8 +165,16 @@ export default function ConformityWorkflowDashboard() {
     // 3. Sort
     if (sortConfig) {
       base.sort((a, b) => {
-        let aVal: any = sortConfig.key === 'dDay' ? calculateDDay(a.dueDate) : a[sortConfig.key as keyof ConformityRecord];
-        let bVal: any = sortConfig.key === 'dDay' ? calculateDDay(b.dueDate) : b[sortConfig.key as keyof ConformityRecord];
+        let aVal: string | number = '';
+        let bVal: string | number = '';
+
+        if (sortConfig.key === 'dDay') {
+          aVal = calculateDDay(a.dueDate);
+          bVal = calculateDDay(b.dueDate);
+        } else {
+          aVal = a[sortConfig.key as keyof ConformityRecord] as string | number;
+          bVal = b[sortConfig.key as keyof ConformityRecord] as string | number;
+        }
 
         if (sortConfig.key === 'dueDate' || sortConfig.key === 'purchaseDate') {
           aVal = new Date(aVal as string).getTime();
@@ -331,34 +372,8 @@ export default function ConformityWorkflowDashboard() {
                   const dDay = calculateDDay(item.dueDate);
                   const dDayStr = getDDayText(dDay);
 
-                  const getRoundStatus = (colRound: number | 'RENEWAL') => {
-                    if (colRound === 'RENEWAL') {
-                      if (item.targetRound === 'RENEWAL') {
-                        if (item.status === 'TARGET') return '대상자';
-                        if (item.status === 'DOC_SUBMITTED') return '서류접수';
-                        if (item.status === 'PAYMENT_CONFIRMED') return '입금확인';
-                      }
-                      return '-';
-                    }
-
-                    if (typeof item.targetRound === 'number') {
-                      if (colRound < item.targetRound) {
-                        return item.history[colRound] || '기간만료';
-                      } 
-                      if (colRound === item.targetRound) {
-                        if (item.status === 'TARGET') return '대상자';
-                        if (item.status === 'DOC_SUBMITTED') return '서류접수';
-                        if (item.status === 'PAYMENT_CONFIRMED') return '입금확인';
-                      }
-                      return '-';
-                    } else if (item.targetRound === 'RENEWAL') {
-                      return item.history[colRound] || '기간만료';
-                    }
-                    return '-';
-                  };
-
                   return (
-                    <tr key={item.id} className={`transition-colors group ${isSelected ? 'bg-brand-500/5' : 'hover:bg-muted-bg/30'}`}>
+                    <tr key={item.id} className={`transition-colors group ${isSelected ? 'bg-brand-500/5' : dDay <= 30 && item.status !== 'PAYMENT_CONFIRMED' ? 'bg-red-500/5 hover:bg-red-500/10' : 'hover:bg-muted-bg/30'}`}>
                       {/* Checkbox */}
                       <td className="px-4 py-4 text-center whitespace-nowrap print:hidden">
                         <input 
@@ -416,7 +431,7 @@ export default function ConformityWorkflowDashboard() {
                       
                       {/* Historical Grid Columns (0~5) */}
                       {[0, 1, 2, 3, 4, 'RENEWAL'].map(round => {
-                        const rs = getRoundStatus(round as any);
+                        const rs = getRoundStatus(item, round as any);
                         return (
                           <td key={round} className="px-1 py-4 text-center whitespace-nowrap">
                             <span className={`text-[10px] font-medium ${
@@ -438,7 +453,7 @@ export default function ConformityWorkflowDashboard() {
                           
                           {/* Render buttons for any pending PAST rounds in history */}
                           {item.history.map((histStatus, index) => {
-                            if (histStatus === '서류접수') {
+                            if (histStatus === '서류접수' && index !== item.targetRound) {
                               return (
                                 <button 
                                   key={`hist-${index}`}
