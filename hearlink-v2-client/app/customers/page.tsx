@@ -78,7 +78,7 @@ export default function CustomersPage() {
                   <p className="text-xs text-muted">{c.chartNo} • {c.age}세 ({c.gender})</p>
                 </div>
               </div>
-              <button className="text-muted hover:text-foreground">
+              <button className="text-muted hover:text-foreground" onClick={(e) => e.preventDefault()}>
                 <MoreVertical className="w-5 h-5" />
               </button>
             </div>
