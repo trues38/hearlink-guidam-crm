@@ -1,215 +1,310 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { Calendar, MessageSquare, Phone, MapPin, AlertCircle, Gift, CheckCircle2, FileText, DollarSign, XCircle, Loader2 } from 'lucide-react'
 
-const API_BASE = 'http://localhost:3002'
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: '대기중',
-  IN_REVIEW: '검토중',
-  NEEDS_SUPPLEMENT: '보완요청',
-  APPROVED: '승인',
-  REJECTED: '반려'
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  IN_REVIEW: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400',
-  NEEDS_SUPPLEMENT: 'bg-orange-100 text-orange-700',
-  APPROVED: 'bg-green-100 dark:bg-emerald-900/50 text-green-700 dark:text-emerald-400',
-  REJECTED: 'bg-red-100 text-red-700 dark:text-red-400'
-}
-
-const SUPPORT_LABELS: Record<string, string> = {
-  DISABILITY_GRADE_HOLDER: '장애등급소지자',
-  POTENTIAL_DISABILITY: '장애가망',
-  INDUSTRIAL_ACCIDENT: '산업재해',
-  GENERAL: '일반'
-}
-
-const RECIPIENT_LABELS: Record<string, string> = {
-  RECIPIENT: '수급자',
-  NEAR_POVERTY: '차상위',
-  GENERAL: '일반'
-}
+// --- Mock Data ---
+type WorkflowStatus = 'TARGET' | 'DOC_SUBMITTED' | 'PAYMENT_CONFIRMED' | 'EXPIRED';
+type TargetRound = 1 | 2 | 3 | 4 | 'RENEWAL';
 
 interface ConformityRecord {
   id: string
   customerId: string
-  round: number
-  supportType: string | null
-  recipientType: string | null
-  status: string
-  missingDocs: string | null
-  reviewedBy: string | null
-  reviewedAt: string | null
-  notes: string | null
-  createdAt: string
-  updatedAt: string
-  customer?: { id: string; name: string; contactNumber: string }
+  name: string
+  contactNumber: string
+  device: string
+  purchaseDate: string
+  targetRound: TargetRound
+  dueDate: string
+  status: WorkflowStatus
 }
 
-export default function ConformityPage() {
-  const [records, setRecords] = useState<ConformityRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState('')
-  const [showModal, setShowModal] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState<ConformityRecord | null>(null)
-  const [statusUpdate, setStatusUpdate] = useState({ status: '', notes: '', missingDocs: '' })
-  const [submitting, setSubmitting] = useState(false)
+// D-Day 계산 유틸
+const calculateDDay = (dueDate: string) => {
+  const today = new Date('2026-04-24T00:00:00Z').getTime();
+  const target = new Date(dueDate).getTime();
+  const diffTime = target - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
 
-  const fetchRecords = async () => {
-    setLoading(true)
+const getBadgeStyle = (dDay: number) => {
+  if (dDay < 0) return 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400 font-bold'; // 초과
+  if (dDay <= 30) return 'bg-orange-500/10 border-orange-500/20 text-orange-600 dark:text-orange-400 font-bold animate-pulse'; // 임박
+  return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium'; // 여유
+}
+
+const getDDayText = (dDay: number) => {
+  if (dDay < 0) return `기한 지남 (D+${Math.abs(dDay)})`;
+  if (dDay === 0) return 'D-Day';
+  return `D-${dDay}`;
+}
+
+export default function ConformityWorkflowDashboard() {
+  const [data, setData] = useState<ConformityRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<WorkflowStatus>('TARGET');
+  const [roundFilter, setRoundFilter] = useState<'ALL' | 1 | 2 | 3 | 4 | 'RENEWAL'>('ALL');
+
+  // Fetch real data from backend
+  const fetchData = async () => {
     try {
-      const centerId = localStorage.getItem('centerId') || 'default-center-id'
-      const params = new URLSearchParams({ centerId })
-      if (statusFilter) params.append('status', statusFilter)
-      
-      const res = await fetch(`${API_BASE}/api/conformity?${params}`)
-      const data = await res.json()
-      setRecords(data.items ?? [])
-    } catch {
-      console.error('Failed to fetch conformity records')
+      setIsLoading(true);
+      // In a real app, centerId comes from context
+      const res = await fetch('http://localhost:3002/api/conformity?centerId=123e4567-e89b-12d3-a456-426614174000');
+      const json = await res.json();
+      setData(json.items || []);
+    } catch (error) {
+      console.error('Failed to fetch conformity data', error);
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  useEffect(() => { fetchRecords() }, [])
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const handleStatusUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedRecord) return
-    setSubmitting(true)
+  // Status Change API Call
+  const changeStatus = async (id: string, newStatus: WorkflowStatus) => {
     try {
-      const res = await fetch(`${API_BASE}/api/conformity/${selectedRecord.customerId}/status`, {
+      await fetch(`http://localhost:3002/api/conformity/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          round: selectedRecord.round,
-          status: statusUpdate.status,
-          notes: statusUpdate.notes,
-          missingDocs: statusUpdate.missingDocs ? statusUpdate.missingDocs.split(',').map(s => s.trim()) : []
-        })
-      })
-      if (!res.ok) throw new Error()
-      setShowModal(false)
-      fetchRecords()
-    } catch {
-      alert('상태 업데이트에 실패했습니다')
-    } finally {
-      setSubmitting(false)
+        body: JSON.stringify({ status: newStatus })
+      });
+      // Optimistic update
+      setData(prev => prev.map(item => item.id === id ? { ...item, status: newStatus } : item));
+    } catch (error) {
+      console.error('Failed to update status', error);
     }
-  }
+  };
 
-  const openStatusModal = (record: ConformityRecord) => {
-    setSelectedRecord(record)
-    setStatusUpdate({ status: record.status, notes: record.notes || '', missingDocs: '' })
-    setShowModal(true)
-  }
+  const filteredData = useMemo(() => {
+    // 1. 먼저 상단 탭(Workflow Status)으로 필터링
+    let base = data.filter(item => item.status === activeTab);
 
-  const filtered = statusFilter ? records.filter(r => r.status === statusFilter) : records
+    // 2. TARGET 탭일 경우에만 내부 차수(Round) 필터 적용
+    if (activeTab === 'TARGET') {
+      if (roundFilter !== 'ALL') {
+        base = base.filter(item => item.targetRound === roundFilter);
+      }
+      // TARGET 탭의 정렬 기준: 무조건 임박순 (D-Day 오름차순)
+      return base.sort((a, b) => calculateDDay(a.dueDate) - calculateDDay(b.dueDate));
+    }
+
+    // 다른 탭들은 만료일 또는 구입일 등 다른 기준으로 정렬 가능 (여기서는 임의로 D-Day순)
+    return base.sort((a, b) => calculateDDay(a.dueDate) - calculateDDay(b.dueDate));
+  }, [data, activeTab, roundFilter]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-800 to-cyan-600 dark:from-blue-400 dark:to-cyan-200 tracking-tight drop-shadow-sm">적합성 심사</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">총 {filtered.length}건</p>
-        </div>
+    <div className="space-y-6 pb-20">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-cyan-500 dark:from-brand-400 dark:to-cyan-300 tracking-tight drop-shadow-sm mb-2">
+          적합관리 워크플로우
+        </h1>
+        <p className="text-sm text-muted">
+          업무 파이프라인에 맞춰 대상자를 추출하고 실시간으로 관리하세요.
+        </p>
       </div>
 
-      {/* Status Filter */}
-      <div className="bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-[2rem] border border-white/60 dark:border-white/10 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.05)] p-4 flex gap-2 flex-wrap">
-        <button onClick={() => setStatusFilter('')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${!statusFilter ? 'bg-blue-600 text-slate-800 dark:text-white' : 'bg-transparent text-slate-400 hover:bg-white dark:hover:bg-white/10'}`}>전체</button>
-        {Object.entries(STATUS_LABELS).map(([status, label]) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${statusFilter === status ? 'bg-blue-600 text-slate-800 dark:text-white' : 'bg-transparent text-slate-400 hover:bg-white dark:hover:bg-white/10'}`}>{label}</button>
-        ))}
+      {/* Main Workflow Kanban Tabs */}
+      <div className="bg-surface/50 p-1.5 rounded-2xl border border-border inline-flex w-full md:w-auto overflow-x-auto no-scrollbar">
+        <button 
+          onClick={() => setActiveTab('TARGET')}
+          className={`flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'TARGET' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'text-muted hover:text-foreground hover:bg-muted-bg'}`}
+        >
+          <AlertCircle className="w-4 h-4" /> 적합 대상자
+          <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px]">
+            {data.filter(d => d.status === 'TARGET').length}
+          </span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('DOC_SUBMITTED')}
+          className={`flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'DOC_SUBMITTED' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-muted hover:text-foreground hover:bg-muted-bg'}`}
+        >
+          <FileText className="w-4 h-4" /> 서류 접수중
+          <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px]">
+            {data.filter(d => d.status === 'DOC_SUBMITTED').length}
+          </span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('PAYMENT_CONFIRMED')}
+          className={`flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'PAYMENT_CONFIRMED' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-muted hover:text-foreground hover:bg-muted-bg'}`}
+        >
+          <DollarSign className="w-4 h-4" /> 입금 확인
+          <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px]">
+            {data.filter(d => d.status === 'PAYMENT_CONFIRMED').length}
+          </span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('EXPIRED')}
+          className={`flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'EXPIRED' ? 'bg-slate-600 text-white shadow-lg shadow-slate-600/20' : 'text-muted hover:text-foreground hover:bg-muted-bg'}`}
+        >
+          <XCircle className="w-4 h-4" /> 기간 만료
+        </button>
       </div>
 
-      {/* Table */}
-      {loading ? (
-        <div className="text-slate-400 py-20 text-center bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/60 dark:border-white/10 animate-pulse">불러오는 중...</div>
-      ) : filtered.length === 0 ? (
-        <div className="text-slate-400 py-20 text-center bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/60 dark:border-white/10 shadow-[inset_0px_1px_1px_rgba(255,255,255,0.05)]">심사 기록이 없습니다.</div>
-      ) : (
-        <div className="bg-white/60 dark:bg-white/[0.03] backdrop-blur-[40px] rounded-[2.5rem] shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1),0_8px_30px_rgba(0,0,0,0.3)] border border-white/60 dark:border-white/10 overflow-hidden relative z-10">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/60 dark:border-white/10">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">고객</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">회차</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">지원유형</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">수급구분</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">상태</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">검토자</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">검토일</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">관리</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/10">
-              {filtered.map(record => (
-                <tr key={record.id} className="hover:bg-white/60 dark:bg-white/5 transition-all duration-300">
-                  <td className="px-6 py-4">
-                    <Link href={`/customers/${record.customerId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400">
-                      {record.customer?.name || '알 수 없음'}
-                    </Link>
-                    <p className="text-xs text-slate-400">{record.customer?.contactNumber}</p>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">#{record.round}차</td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.supportType ? SUPPORT_LABELS[record.supportType] || record.supportType : '-'}</td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.recipientType ? RECIPIENT_LABELS[record.recipientType] || record.recipientType : '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[record.status]}`}>
-                      {STATUS_LABELS[record.status] || record.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.reviewedBy || '-'}</td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{record.reviewedAt ? new Date(record.reviewedAt).toLocaleDateString('ko-KR') : '-'}</td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => openStatusModal(record)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">상태변경</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Sub Filters (Only show in TARGET tab) */}
+      {activeTab === 'TARGET' && (
+        <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+          <button 
+            onClick={() => setRoundFilter('ALL')} 
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${roundFilter === 'ALL' ? 'bg-foreground text-background border-foreground shadow-md' : 'bg-surface text-muted border-border hover:bg-muted-bg hover:text-foreground'}`}
+          >
+            전체 차수
+          </button>
+          
+          {[1, 2, 3, 4].map(round => (
+            <button 
+              key={round}
+              onClick={() => setRoundFilter(round as 1|2|3|4)} 
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${roundFilter === round ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30' : 'bg-surface text-muted border-border hover:bg-muted-bg hover:text-foreground'}`}
+            >
+              {round}차 대상
+            </button>
+          ))}
+
+          <button 
+            onClick={() => setRoundFilter('RENEWAL')} 
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${roundFilter === 'RENEWAL' ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/30' : 'bg-surface text-muted border-border hover:bg-muted-bg hover:text-foreground'}`}
+          >
+            <Gift className="w-3.5 h-3.5" /> 5년 재지원 대상
+          </button>
         </div>
       )}
 
-      {/* Status Update Modal */}
-      {showModal && selectedRecord && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-slide-up">
-          <div className="bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1),0_30px_60px_rgba(0,0,0,0.5)] border border-white/60 dark:border-white/10 w-full max-w-lg p-8">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">심사 상태 변경</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              {selectedRecord.customer?.name} - #{selectedRecord.round}차 심사
-            </p>
-            <form onSubmit={handleStatusUpdate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">상태</label>
-                <select value={statusUpdate.status} onChange={e => setStatusUpdate(s => ({ ...s, status: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-md text-slate-100 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all">
-                  {Object.entries(STATUS_LABELS).map(([status, label]) => (
-                    <option key={status} value={status} className="bg-slate-800">{label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">메모</label>
-                <textarea value={statusUpdate.notes} onChange={e => setStatusUpdate(s => ({ ...s, notes: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-md text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all" rows={3} placeholder="검토 메모..." />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">필요 서류 (쉼표로 구분)</label>
-                <input type="text" value={statusUpdate.missingDocs} onChange={e => setStatusUpdate(s => ({ ...s, missingDocs: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-md text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all" placeholder="예: 주민등록초본, 소득증빙" />
-              </div>
-              <div className="flex justify-end gap-3 pt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl border border-white/80 dark:border-white/20 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-white/10 transition-colors font-bold text-sm">취소</button>
-                <button type="submit" disabled={submitting} className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-slate-800 dark:text-white transition-colors font-bold text-sm">{submitting ? '저장 중...' : '저장'}</button>
-              </div>
-            </form>
+      {/* Target Table */}
+      <div className="bg-surface border border-border rounded-2xl shadow-[inset_0px_1px_1px_rgba(255,255,255,0.05),0_8px_30px_rgba(0,0,0,0.05)] overflow-hidden">
+        {isLoading ? (
+          <div className="py-24 flex flex-col items-center justify-center text-center">
+            <Loader2 className="w-8 h-8 text-brand-500 animate-spin mb-4" />
+            <h3 className="text-sm font-bold text-foreground mb-1">데이터를 불러오는 중입니다...</h3>
           </div>
-        </div>
-      )}
+        ) : filteredData.length === 0 ? (
+          <div className="py-24 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-muted-bg rounded-full flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-8 h-8 text-muted" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-1">해당되는 데이터가 없습니다</h3>
+            <p className="text-sm text-muted">다른 탭이나 필터를 선택해 주세요.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-muted-bg/30">
+                  <th className="px-6 py-4 text-xs font-bold text-muted uppercase tracking-wider w-[25%]">고객 (연락처)</th>
+                  <th className="px-6 py-4 text-xs font-bold text-muted uppercase tracking-wider w-[25%]">최신 기기 (구입일)</th>
+                  <th className="px-6 py-4 text-xs font-bold text-muted uppercase tracking-wider w-[15%]">대상 회차</th>
+                  <th className="px-6 py-4 text-xs font-bold text-muted uppercase tracking-wider w-[15%]">상태 / D-Day</th>
+                  <th className="px-6 py-4 text-xs font-bold text-muted uppercase tracking-wider text-right w-[20%]">빠른 조치</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredData.map(item => {
+                  const dDay = calculateDDay(item.dueDate);
+                  return (
+                    <tr key={item.id} className="hover:bg-muted-bg/30 transition-colors group">
+                      {/* Customer Info */}
+                      <td className="px-6 py-4">
+                        <Link href={`/customers/${item.customerId}`} className="font-bold text-foreground hover:text-brand-500 transition-colors text-sm flex items-center gap-2 mb-1">
+                          {item.name}
+                        </Link>
+                        <div className="flex items-center gap-1 text-xs text-muted font-medium">
+                          <Phone className="w-3 h-3" /> {item.contactNumber}
+                        </div>
+                      </td>
+                      
+                      {/* Device Info */}
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-foreground mb-1">{item.device}</div>
+                        <div className="text-xs text-muted font-medium">구입일: {item.purchaseDate}</div>
+                      </td>
+                      
+                      {/* Target Round */}
+                      <td className="px-6 py-4">
+                        {item.targetRound === 'RENEWAL' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                            <Gift className="w-3.5 h-3.5" /> 재지원
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            {item.targetRound}차 적합
+                          </span>
+                        )}
+                      </td>
+                      
+                      {/* D-Day or Status */}
+                      <td className="px-6 py-4">
+                        {activeTab === 'TARGET' ? (
+                          <div className="flex flex-col items-start gap-1">
+                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs border ${getBadgeStyle(dDay)}`}>
+                              {getDDayText(dDay)}
+                            </span>
+                            <span className="text-[10px] text-muted font-medium">마감: {item.dueDate}</span>
+                          </div>
+                        ) : activeTab === 'DOC_SUBMITTED' ? (
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                            청구/심사중
+                          </span>
+                        ) : activeTab === 'PAYMENT_CONFIRMED' ? (
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            입금 확인됨
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                            청구 소멸
+                          </span>
+                        )}
+                      </td>
+                      
+                      {/* Action Buttons */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          
+                          {activeTab === 'TARGET' && (
+                            <>
+                              <button className="flex items-center gap-1.5 px-3 py-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-950 rounded-xl text-xs font-bold transition-colors shadow-sm">
+                                <MessageSquare className="w-3.5 h-3.5" /> 알림톡
+                              </button>
+                              <button 
+                                onClick={() => changeStatus(item.id, 'DOC_SUBMITTED')}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-surface hover:bg-muted-bg text-foreground border border-border rounded-xl text-xs font-bold transition-colors shadow-sm"
+                                title="세금계산서가 발행되면 자동으로 이 상태로 넘어갑니다."
+                              >
+                                서류접수 →
+                              </button>
+                            </>
+                          )}
+
+                          {activeTab === 'DOC_SUBMITTED' && (
+                            <button 
+                              onClick={() => changeStatus(item.id, 'PAYMENT_CONFIRMED')}
+                              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
+                            >
+                              <DollarSign className="w-3.5 h-3.5" /> 입금완료 처리
+                            </button>
+                          )}
+
+                          {activeTab === 'PAYMENT_CONFIRMED' && (
+                            <span className="text-xs font-bold text-emerald-500 flex items-center justify-end gap-1">
+                              <CheckCircle2 className="w-4 h-4" /> 완료
+                            </span>
+                          )}
+
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

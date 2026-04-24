@@ -183,6 +183,21 @@ app.post('/api/documents', async (req, res) => {
   const document = await prisma.document.create({
     data: { customerId, purpose, insuranceType, type, key }
   });
+
+  // [Bi-directional Sync] 세금계산서/청구서 발행 시 서류접수(IN_REVIEW) 자동 전환
+  if (purpose === 'CONFORMITY' || type === 'CONFORMITY_CLAIM' || type === 'TAX_INVOICE') {
+    const latestConformity = await prisma.conformityRecord.findFirst({
+      where: { customerId, status: { in: ['PENDING'] } },
+      orderBy: { round: 'desc' }
+    });
+    if (latestConformity) {
+      await prisma.conformityRecord.update({
+        where: { id: latestConformity.id },
+        data: { status: 'IN_REVIEW', reviewedAt: new Date() }
+      });
+    }
+  }
+
   res.status(201).json(document);
 });
 
@@ -554,6 +569,24 @@ app.put('/api/payments/:id', async (req, res) => {
       ...(status !== undefined && { status })
     }
   });
+
+  // [Bi-directional Sync] 입금 완료 시 적합관리 입금확인(APPROVED) 자동 전환
+  if (status === 'PAID') {
+    const isConformityPayment = payment.memo && payment.memo.includes('적합관리');
+    if (isConformityPayment && payment.customerId) {
+      const inReviewConformity = await prisma.conformityRecord.findFirst({
+        where: { customerId: payment.customerId, status: 'IN_REVIEW' },
+        orderBy: { round: 'desc' }
+      });
+      if (inReviewConformity) {
+        await prisma.conformityRecord.update({
+          where: { id: inReviewConformity.id },
+          data: { status: 'APPROVED', reviewedAt: new Date() }
+        });
+      }
+    }
+  }
+
   res.json(payment);
 });
 
@@ -1149,87 +1182,179 @@ app.put('/api/fittings/:id', async (req, res) => {
 });
 
 // ============================================
-// Phase 3: Conformity/적합성 심사
+// Phase 3: Conformity/적합성 심사 (V2 Action-Oriented)
 // ============================================
 
-// Center-level conformity list (avoids N+1)
 app.get('/api/conformity', async (req, res) => {
-  const { centerId, status, skip = 0, limit = 100 } = req.query;
-  const where = {};
-  if (status) where.status = status;
-  // Validate UUID format before filtering by centerId to avoid Prisma errors
+  const { centerId } = req.query;
+
+  // 1. Fetch all customers with their latest device and conformity records
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (centerId && uuidRegex.test(centerId)) {
-    where.customer = { centerId };
+  const where = (centerId && uuidRegex.test(centerId)) ? { centerId } : {};
+
+  const customers = await prisma.customer.findMany({
+    where,
+    include: {
+      devices: {
+        orderBy: { createdAt: 'desc' },
+        take: 1
+      },
+      conformityRecords: true
+    }
+  });
+
+  const now = new Date();
+  const results = [];
+
+  for (const customer of customers) {
+    if (customer.devices.length === 0) continue; 
+    
+    const latestDevice = customer.devices[0];
+    const purchaseDate = new Date(latestDevice.createdAt);
+    
+    // Calculate difference in months
+    const diffMonths = (now.getFullYear() - purchaseDate.getFullYear()) * 12 + (now.getMonth() - purchaseDate.getMonth());
+    
+    let targetRound = 0;
+    let dueDate = new Date(purchaseDate);
+
+    if (diffMonths >= 54) { // 4.5 years
+      targetRound = 'RENEWAL';
+      dueDate.setFullYear(purchaseDate.getFullYear() + 5);
+    } else if (diffMonths >= 36) { // 3~4 years
+      targetRound = 4;
+      dueDate.setFullYear(purchaseDate.getFullYear() + 4);
+    } else if (diffMonths >= 24) { // 2~3 years
+      targetRound = 3;
+      dueDate.setFullYear(purchaseDate.getFullYear() + 3);
+    } else if (diffMonths >= 12) { // 1~2 years
+      targetRound = 2;
+      dueDate.setFullYear(purchaseDate.getFullYear() + 2);
+    } else if (diffMonths >= 1) { // 1m ~ 1y
+      targetRound = 1;
+      dueDate.setFullYear(purchaseDate.getFullYear() + 1);
+    } else {
+      // Less than 1 month, Initial target
+      targetRound = 0;
+      dueDate.setMonth(purchaseDate.getMonth() + 1);
+    }
+
+    // Match with DB Record
+    let dbStatus = 'PENDING';
+    let recordId = `virtual-${customer.id}-${targetRound}`;
+    
+    if (targetRound !== 'RENEWAL') {
+      const record = customer.conformityRecords.find(r => r.round === targetRound);
+      if (record) {
+        dbStatus = record.status; // PENDING, IN_REVIEW, APPROVED, REJECTED
+        recordId = record.id;
+      }
+    }
+
+    // Calculate History Array
+    // history array index corresponds to [0차(초기청구), 1차, 2차, 3차, 4차]
+    const history = [];
+    for (let i = 0; i < 5; i++) {
+      if (targetRound === 'RENEWAL' || i < targetRound) {
+        const pastRecord = customer.conformityRecords.find(r => r.round === i);
+        if (pastRecord && pastRecord.status === 'APPROVED') {
+          history[i] = '입금확인';
+        } else {
+          history[i] = '기간만료';
+        }
+      } else {
+        history[i] = null; // Future or current round doesn't have a resolved history yet
+      }
+    }
+
+    // Map DB status to Frontend Status
+    let frontendStatus = 'TARGET';
+    if (dbStatus === 'IN_REVIEW' || dbStatus === 'NEEDS_SUPPLEMENT') frontendStatus = 'DOC_SUBMITTED';
+    else if (dbStatus === 'APPROVED') frontendStatus = 'PAYMENT_CONFIRMED';
+    else if (dbStatus === 'REJECTED') frontendStatus = 'EXPIRED';
+
+    // Auto-Expire
+    if (frontendStatus === 'TARGET' && now > dueDate) {
+      frontendStatus = 'EXPIRED';
+    }
+
+    results.push({
+      id: recordId,
+      customerId: customer.id,
+      name: customer.name,
+      contactNumber: customer.contactNumber,
+      device: `${latestDevice.brand} ${latestDevice.model}`,
+      purchaseDate: purchaseDate.toISOString().split('T')[0],
+      targetRound,
+      dueDate: dueDate.toISOString().split('T')[0],
+      status: frontendStatus,
+      history,
+    });
   }
-  
-  const [items, total] = await Promise.all([
-    prisma.conformityRecord.findMany({
-      where,
-      skip: parseInt(skip),
-      take: parseInt(limit),
-      orderBy: { createdAt: 'desc' },
-      include: { customer: { select: { id: true, name: true, contactNumber: true } } }
-    }),
-    prisma.conformityRecord.count({ where })
-  ]);
-  res.json({ items, total, skip: parseInt(skip), limit: parseInt(limit) });
+
+  res.json({ items: results, total: results.length });
 });
 
-app.get('/api/conformity/:customerId', async (req, res) => {
-  const records = await prisma.conformityRecord.findMany({
-    where: { customerId: req.params.customerId },
-    orderBy: { round: 'desc' }
-  });
-  res.json({ items: records });
-});
+app.put('/api/conformity/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; 
+  
+  // Map frontend status back to DB status
+  let dbStatus = 'PENDING';
+  if (status === 'DOC_SUBMITTED') dbStatus = 'IN_REVIEW';
+  if (status === 'PAYMENT_CONFIRMED') dbStatus = 'APPROVED';
+  if (status === 'EXPIRED') dbStatus = 'REJECTED';
 
-app.post('/api/conformity/:customerId', async (req, res) => {
-  const { supportType, recipientType, status, missingDocs, notes, reviewedBy } = req.body;
-  
-  // Get max round
-  const last = await prisma.conformityRecord.findFirst({
-    where: { customerId: req.params.customerId },
-    orderBy: { round: 'desc' }
-  });
-  const newRound = (last?.round || 0) + 1;
-  
-  const record = await prisma.conformityRecord.create({
-    data: {
-      customerId: req.params.customerId,
-      round: newRound,
-      supportType,
-      recipientType,
-      status: status || 'PENDING',
-      missingDocs: missingDocs ? JSON.stringify(missingDocs) : '[]',
-      notes,
-      reviewedBy
+  let record;
+
+  if (id.startsWith('virtual-')) {
+    const parts = id.split('-');
+    const customerId = parts.slice(1, parts.length - 1).join('-');
+    const roundStr = parts[parts.length - 1];
+    
+    if (roundStr === 'RENEWAL') {
+      return res.json({ success: true, note: 'Renewal status updated (mock)' });
     }
-  });
-  
-  res.status(201).json(record);
-});
+    
+    record = await prisma.conformityRecord.create({
+      data: {
+        customerId,
+        round: parseInt(roundStr),
+        status: dbStatus,
+        reviewedAt: new Date()
+      }
+    });
+  } else {
+    record = await prisma.conformityRecord.update({
+      where: { id },
+      data: {
+        status: dbStatus,
+        reviewedAt: new Date()
+      }
+    });
+  }
 
-app.put('/api/conformity/:customerId/status', async (req, res) => {
-  const { round, status, notes, missingDocs } = req.body;
-  
-  const record = await prisma.conformityRecord.findFirst({
-    where: { customerId: req.params.customerId, round: parseInt(round) }
-  });
-  
-  if (!record) return res.status(404).json({ error: 'Record not found' });
-  
-  const updated = await prisma.conformityRecord.update({
-    where: { id: record.id },
-    data: {
-      status,
-      notes,
-      missingDocs: missingDocs ? JSON.stringify(missingDocs) : undefined,
-      reviewedAt: new Date()
+  // [Bi-directional Sync] 적합관리 입금확인 시 자동 매출 등록
+  if (dbStatus === 'APPROVED') {
+    const customer = await prisma.customer.findUnique({
+      where: { id: record.customerId }
+    });
+    if (customer) {
+      await prisma.sale.create({
+        data: {
+          centerId: customer.centerId,
+          customerId: customer.id,
+          totalAmount: 50000, // 적합관리 정부지원금 5만원 (가정)
+          paidAmount: 50000,
+          memo: `${record.round}차 적합관리 비용 (자동생성)`,
+          status: 'PAID',
+          data: {}
+        }
+      });
     }
-  });
-  
-  res.json(updated);
+  }
+
+  return res.json(record);
 });
 
 // ============================================

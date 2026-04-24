@@ -81,3 +81,30 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-[rgba(var(--muted),0.5)];
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  aside, nav, [role="navigation"], #sidebar, #copilot-drawer {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: none !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}
